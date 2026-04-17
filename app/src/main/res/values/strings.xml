@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">InfinityPS</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string-array name="durasi_sewa_array">
+        <item>30 menit</item>
+        <item>60 menit</item>
+        <item>90 menit</item>
+        <item>120 menit</item>
+        <item>150 menit</item>
+        <item>180 menit</item>
+    </string-array>
+</resources>

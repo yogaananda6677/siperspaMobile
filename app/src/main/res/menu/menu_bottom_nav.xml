@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/itemHome"
+        android:title="Home"
+        android:icon="@drawable/ic_home_24"
+        app:showAsAction="always"/>
+    <item
+        android:id="@+id/monitoring"
+        android:icon="@drawable/ic_monitor_24"
+        android:title="Monitoring"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/riwayat"
+        android:icon="@drawable/ic_history_24"
+        android:title="Riwayat"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/profil"
+        android:icon="@drawable/ic_person_24"
+        android:title="Profil"
+        app:showAsAction="always" />
+
+</menu>

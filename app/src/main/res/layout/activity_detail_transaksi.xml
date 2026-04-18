@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#F5F1FB">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -20,73 +21,115 @@
                 android:layout_height="wrap_content"
                 android:text="#12"
                 android:textSize="22sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:textColor="#1F2937" />
 
             <TextView
                 android:id="@+id/tvStatusTransaksi"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="aktif" />
+                android:text="aktif"
+                android:textColor="#111827" />
 
             <TextView
                 android:id="@+id/tvStatusBayar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="menunggu" />
+                android:text="menunggu"
+                android:textColor="#111827" />
 
             <TextView
                 android:id="@+id/tvTanggal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="2026-04-12" />
+                android:layout_marginTop="10dp"
+                android:text="2026-04-12"
+                android:textColor="#6B7280" />
 
             <TextView
                 android:id="@+id/tvTotal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="14dp"
                 android:text="Rp 0"
                 android:textStyle="bold"
-                android:textSize="18sp" />
+                android:textSize="20sp"
+                android:textColor="#111827" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:text="Detail Sewa"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:textColor="#111827" />
 
             <TextView
                 android:id="@+id/tvDetailSewa"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="-" />
+                android:text="-"
+                android:textColor="#374151" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:text="Detail Produk"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:textColor="#111827" />
 
             <TextView
                 android:id="@+id/tvDetailProduk"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="-" />
+                android:text="-"
+                android:textColor="#374151" />
 
-            <Button
-                android:id="@+id/btnBayar"
+            <LinearLayout
+                android:id="@+id/layoutActionButtons"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="Bayar Sekarang"
-                android:visibility="gone" />
+                android:orientation="vertical">
+
+                <Button
+                    android:id="@+id/btnBayar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Bayar Sekarang"
+                    android:textAllCaps="false"
+                    android:backgroundTint="#6D4BC3"
+                    android:textColor="#FFFFFF"
+                    android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/btnTambahWaktu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Tambah Waktu"
+                    android:textAllCaps="false"
+                    android:backgroundTint="#2563EB"
+                    android:textColor="#FFFFFF"
+                    android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/btnTambahProduk"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Tambah Produk"
+                    android:textAllCaps="false"
+                    android:backgroundTint="#7C3AED"
+                    android:textColor="#FFFFFF"
+                    android:visibility="gone" />
+            </LinearLayout>
+
         </LinearLayout>
     </ScrollView>
 
@@ -94,5 +137,6 @@
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center" />
+        android:layout_gravity="center"
+        android:visibility="gone" />
 </FrameLayout>

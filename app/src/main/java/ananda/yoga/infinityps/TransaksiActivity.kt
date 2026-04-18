@@ -1,5 +1,6 @@
 package ananda.yoga.infinityps
 
+import android.app.TimePickerDialog
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
@@ -7,15 +8,18 @@ import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ProgressBar
+import android.widget.RadioButton
+import android.widget.RadioGroup
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -24,6 +28,12 @@ class TransaksiActivity : AppCompatActivity() {
     private lateinit var tvNomorPs: TextView
     private lateinit var tvNamaTipe: TextView
     private lateinit var tvHargaPerJam: TextView
+
+    private lateinit var rgBookingMode: RadioGroup
+    private lateinit var rbBookingSekarang: RadioButton
+    private lateinit var rbBookingNanti: RadioButton
+    private lateinit var tvJamMulai: TextView
+    private lateinit var btnPilihJam: Button
 
     private lateinit var spinnerDurasi: Spinner
     private lateinit var btnHitungSewa: Button
@@ -50,6 +60,9 @@ class TransaksiActivity : AppCompatActivity() {
     private var subtotalSewa: Long = 0L
     private var subtotalProduk: Long = 0L
 
+    private var bookingMode: String = "sekarang"
+    private var selectedStartCalendar: Calendar = Calendar.getInstance()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_transaksi)
@@ -58,6 +71,7 @@ class TransaksiActivity : AppCompatActivity() {
         readIntent()
         setupHeader()
         setupSpinner()
+        setupBookingMode()
         setupProdukList()
         setupActions()
         loadProduk()
@@ -69,6 +83,12 @@ class TransaksiActivity : AppCompatActivity() {
         tvNomorPs = findViewById(R.id.tvNomorPs)
         tvNamaTipe = findViewById(R.id.tvNamaTipe)
         tvHargaPerJam = findViewById(R.id.tvHargaPerJam)
+
+        rgBookingMode = findViewById(R.id.rgBookingMode)
+        rbBookingSekarang = findViewById(R.id.rbBookingSekarang)
+        rbBookingNanti = findViewById(R.id.rbBookingNanti)
+        tvJamMulai = findViewById(R.id.tvJamMulai)
+        btnPilihJam = findViewById(R.id.btnPilihJam)
 
         spinnerDurasi = findViewById(R.id.spinnerDurasi)
         btnHitungSewa = findViewById(R.id.btnHitungSewa)
@@ -89,7 +109,6 @@ class TransaksiActivity : AppCompatActivity() {
         nomorPs = intent.getStringExtra("nomor_ps") ?: "-"
         namaTipe = intent.getStringExtra("nama_tipe") ?: "-"
         hargaSewa = intent.getLongExtra("harga_sewa", 0L)
-        tvHargaPerJam.text = "${formatRupiah(hargaSewa)}/jam"
 
         val prefs = getSharedPreferences("app_session", Context.MODE_PRIVATE)
         idUser = prefs.getInt("id_user", 0)
@@ -105,6 +124,83 @@ class TransaksiActivity : AppCompatActivity() {
         val durasiList = listOf("30 menit", "60 menit", "90 menit", "120 menit", "180 menit")
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, durasiList)
         spinnerDurasi.adapter = adapter
+    }
+
+    private fun setupBookingMode() {
+        bookingMode = "sekarang"
+        rbBookingSekarang.isChecked = true
+        btnPilihJam.visibility = View.GONE
+        selectedStartCalendar = Calendar.getInstance()
+
+        updateJamMulaiLabel()
+
+        rgBookingMode.setOnCheckedChangeListener { _, checkedId ->
+            when (checkedId) {
+                R.id.rbBookingSekarang -> {
+                    bookingMode = "sekarang"
+                    btnPilihJam.visibility = View.GONE
+                    selectedStartCalendar = Calendar.getInstance()
+                    updateJamMulaiLabel()
+                    hitungSewa()
+                }
+
+                R.id.rbBookingNanti -> {
+                    bookingMode = "nanti"
+                    btnPilihJam.visibility = View.VISIBLE
+
+                    val cal = Calendar.getInstance()
+                    cal.add(Calendar.MINUTE, 30)
+                    cal.set(Calendar.SECOND, 0)
+                    cal.set(Calendar.MILLISECOND, 0)
+                    selectedStartCalendar = cal
+
+                    updateJamMulaiLabel()
+                    hitungSewa()
+                }
+            }
+        }
+
+        btnPilihJam.setOnClickListener {
+            showTimePicker()
+        }
+    }
+
+    private fun showTimePicker() {
+        val hour = selectedStartCalendar.get(Calendar.HOUR_OF_DAY)
+        val minute = selectedStartCalendar.get(Calendar.MINUTE)
+
+        TimePickerDialog(
+            this,
+            { _, selectedHour, selectedMinute ->
+                val now = Calendar.getInstance()
+                val picked = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, selectedHour)
+                    set(Calendar.MINUTE, selectedMinute)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+
+                if (picked.before(now)) {
+                    picked.add(Calendar.DAY_OF_MONTH, 1)
+                }
+
+                selectedStartCalendar = picked
+                updateJamMulaiLabel()
+                hitungSewa()
+            },
+            hour,
+            minute,
+            true
+        ).show()
+    }
+
+    private fun updateJamMulaiLabel() {
+        tvJamMulai.text = if (bookingMode == "sekarang") {
+            "Sekarang"
+        } else {
+            val sdf = SimpleDateFormat("dd MMM yyyy HH:mm", Locale("id", "ID"))
+            sdf.format(selectedStartCalendar.time)
+        }
     }
 
     private fun setupProdukList() {
@@ -151,7 +247,11 @@ class TransaksiActivity : AppCompatActivity() {
                     Toast.makeText(this@TransaksiActivity, "Gagal memuat produk", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@TransaksiActivity, "Gagal terhubung ke server", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@TransaksiActivity,
+                    "Gagal terhubung ke server: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -160,7 +260,13 @@ class TransaksiActivity : AppCompatActivity() {
         val durasiMenit = getSelectedDurasiMenit()
         subtotalSewa = ((hargaSewa / 60.0) * durasiMenit).toLong()
 
-        val selesai = Date(System.currentTimeMillis() + (durasiMenit * 60 * 1000L))
+        val mulaiMillis = if (bookingMode == "sekarang") {
+            System.currentTimeMillis()
+        } else {
+            selectedStartCalendar.timeInMillis
+        }
+
+        val selesai = Date(mulaiMillis + (durasiMenit * 60 * 1000L))
         val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
 
         tvJamSelesai.text = sdf.format(selesai)
@@ -190,9 +296,13 @@ class TransaksiActivity : AppCompatActivity() {
         }
     }
 
-    private fun nowForApi(): String {
+    private fun selectedJamMulaiForApi(): String {
         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-        return sdf.format(Date())
+        return if (bookingMode == "sekarang") {
+            sdf.format(Date())
+        } else {
+            sdf.format(selectedStartCalendar.time)
+        }
     }
 
     private fun submitTransaksi() {
@@ -204,7 +314,7 @@ class TransaksiActivity : AppCompatActivity() {
         val sewaPayload = listOf(
             SewaRequest(
                 idPs = idPs,
-                jamMulai = nowForApi(),
+                jamMulai = selectedJamMulaiForApi(),
                 durasiMenit = getSelectedDurasiMenit()
             )
         )
@@ -236,6 +346,7 @@ class TransaksiActivity : AppCompatActivity() {
                 Log.d("BOOKING", "TOKEN=$token")
                 Log.d("BOOKING", "ID_USER=$idUser")
                 Log.d("BOOKING", "ID_PS=$idPs")
+                Log.d("BOOKING", "JAM_MULAI=${selectedJamMulaiForApi()}")
                 Log.d("BOOKING", "REQUEST=$request")
 
                 val response = RetrofitClient.apiService.createTransaksi(
@@ -248,9 +359,15 @@ class TransaksiActivity : AppCompatActivity() {
                     val body = response.body()
                     Log.d("BOOKING", "SUCCESS=$body")
 
+                    val msg = if (bookingMode == "sekarang") {
+                        "Booking sekarang berhasil dibuat."
+                    } else {
+                        "Booking untuk nanti berhasil dibuat."
+                    }
+
                     Toast.makeText(
                         this@TransaksiActivity,
-                        "Booking berhasil. Menunggu admin mengaktifkan transaksi.",
+                        msg,
                         Toast.LENGTH_LONG
                     ).show()
                     finish()

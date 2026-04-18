@@ -9,7 +9,7 @@ data class HistoryResponse(
 data class HistoryItem(
     @SerializedName("id_transaksi") val idTransaksi: Int,
     val tanggal: String,
-    @SerializedName("total_harga") val totalHarga: Long,
+    @SerializedName("total_harga") val totalHarga: Double,
     @SerializedName("status_transaksi") val statusTransaksi: String,
     @SerializedName("sumber_transaksi") val sumberTransaksi: String,
     val user: HistoryUser?,
@@ -81,4 +81,18 @@ data class BayarResponse(
 
 data class DetailHistoryResponse(
     val data: HistoryItem
+)
+
+data class TambahWaktuRequest(
+    @SerializedName("id_ps") val idPs: Int? = null,
+    @SerializedName("menit_tambahan") val menitTambahan: Int
+)
+
+data class TambahProdukRequest(
+    val produk: List<TambahProdukItem>
+)
+
+data class TambahProdukItem(
+    @SerializedName("id_produk") val idProduk: Int,
+    val qty: Int
 )

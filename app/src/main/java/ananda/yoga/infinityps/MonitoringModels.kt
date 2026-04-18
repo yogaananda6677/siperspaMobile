@@ -23,8 +23,21 @@ data class TipePs(
 data class TransaksiAktif(
     @SerializedName("id_transaksi") val idTransaksi: Int,
     @SerializedName("status_transaksi") val statusTransaksi: String? = null,
+    val user: MonitoringUser? = null,
+    val pembayaran: MonitoringPembayaran? = null,
     @SerializedName("detail_sewa") val detailSewa: List<DetailSewa> = emptyList(),
     @SerializedName("detail_produk") val detailProduk: List<DetailProduk> = emptyList()
+)
+
+data class MonitoringUser(
+    @SerializedName("id_user") val idUser: Int,
+    val name: String,
+    val username: String,
+    val email: String
+)
+
+data class MonitoringPembayaran(
+    @SerializedName("status_bayar") val statusBayar: String? = null
 )
 
 data class DetailSewa(

@@ -68,4 +68,22 @@ interface ApiService {
         @Path("id") id: Int,
         @Body request: BayarRequest
     ): Response<BayarResponse>
+
+
+    @PATCH("transaksi/{id}/tambah-waktu")
+    suspend fun tambahWaktu(
+        @Header("Authorization") token: String,
+        @Header("Accept") accept: String = "application/json",
+        @Path("id") id: Int,
+        @Body request: TambahWaktuRequest
+    ): Response<DetailHistoryResponse>
+
+    @PATCH("transaksi/{id}/tambah-produk")
+    suspend fun tambahProduk(
+        @Header("Authorization") token: String,
+        @Header("Accept") accept: String = "application/json",
+        @Path("id") id: Int,
+        @Body request: TambahProdukRequest
+    ): Response<DetailHistoryResponse>
+    
 }

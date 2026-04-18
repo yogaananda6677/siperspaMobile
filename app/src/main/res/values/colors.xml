@@ -41,4 +41,7 @@
 
     <color name="status_booking_text">#8A5A00</color>
 
+    <color name="status_owned_active_text">#0B4FB3</color>
+    <color name="card_owned_active_bg">#EAF3FF</color>
+
 </resources>

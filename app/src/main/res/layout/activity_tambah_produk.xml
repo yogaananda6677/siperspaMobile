@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F1FB">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tambah Produk"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#1F2937" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvProdukTambah"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="16dp" />
+
+        <LinearLayout
+            android:id="@+id/layoutEmptyProduk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Produk tidak tersedia"
+                android:textColor="#6B7280" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnSimpanTambahProduk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Simpan Tambahan Produk"
+            android:textAllCaps="false"
+            android:backgroundTint="#7C3AED"
+            android:textColor="#FFFFFF" />
+
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progressBarTambahProduk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+
+</FrameLayout>

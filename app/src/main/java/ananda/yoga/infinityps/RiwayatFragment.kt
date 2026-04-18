@@ -124,6 +124,7 @@ class RiwayatFragment : Fragment() {
                     "Gagal terhubung ke server: ${e.message}",
                     Toast.LENGTH_SHORT
                 ).show()
+
             } finally {
                 Log.d(TAG, "=== FETCH HISTORY END ===")
                 setLoading(false)

@@ -16,6 +16,12 @@
         android:theme="@style/Theme.Material3.Light.NoActionBar"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".TambahProdukActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TambahWaktuActivity"
+            android:exported="false" />
+        <activity
             android:name=".PembayaranActivity"
             android:exported="false" />
         <activity

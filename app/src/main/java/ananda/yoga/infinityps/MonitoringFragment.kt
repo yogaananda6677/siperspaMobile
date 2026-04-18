@@ -1,5 +1,6 @@
 package ananda.yoga.infinityps
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -28,6 +29,7 @@ class MonitoringFragment : Fragment() {
     private lateinit var tvTotalTersedia: TextView
 
     private lateinit var adapter: MonitoringAdapter
+    private var currentUserId: Int = 0
 
     private val handler = Handler(Looper.getMainLooper())
     private val timerRunnable = object : Runnable {
@@ -49,6 +51,9 @@ class MonitoringFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val prefs = requireContext().getSharedPreferences("app_session", Context.MODE_PRIVATE)
+        currentUserId = prefs.getInt("id_user", 0)
+
         rvMonitoring = view.findViewById(R.id.rvMonitoring)
         progressBar = view.findViewById(R.id.progressBar)
         layoutEmpty = view.findViewById(R.id.layoutEmpty)
@@ -56,9 +61,15 @@ class MonitoringFragment : Fragment() {
         tvTotalAktif = view.findViewById(R.id.tvTotalAktif)
         tvTotalTersedia = view.findViewById(R.id.tvTotalTersedia)
 
-        adapter = MonitoringAdapter { item ->
-            openTransaksiPage(item)
-        }
+        adapter = MonitoringAdapter(
+            currentUserId = currentUserId,
+            onAvailableClick = { item ->
+                openTransaksiPage(item)
+            },
+            onOwnedActiveClick = { item ->
+                openDetailTransaksiPage(item)
+            }
+        )
 
         rvMonitoring.layoutManager = GridLayoutManager(requireContext(), 2)
         rvMonitoring.adapter = adapter
@@ -88,6 +99,16 @@ class MonitoringFragment : Fragment() {
 
                 if (response.isSuccessful) {
                     val items = response.body()?.data ?: emptyList()
+
+                    items.forEach {
+                        Log.d(
+                            "MONITORING_DEBUG",
+                            "ps=${it.nomorPs}, statusPs=${it.statusPs}, " +
+                                    "statusTransaksi=${it.activeTransaksi?.statusTransaksi}, " +
+                                    "statusBayar=${it.activeTransaksi?.pembayaran?.statusBayar}, " +
+                                    "userId=${it.activeTransaksi?.user?.idUser}, currentUserId=$currentUserId"
+                        )
+                    }
 
                     adapter.submitList(items)
 
@@ -124,8 +145,10 @@ class MonitoringFragment : Fragment() {
     }
 
     private fun isPsSedangDipakai(item: PsMonitoringItem): Boolean {
+        val transaksiStatus = item.activeTransaksi?.statusTransaksi
         return item.statusPs.equals("digunakan", true) ||
-                item.activeTransaksi?.statusTransaksi.equals("aktif", true)
+                transaksiStatus.equals("aktif", true) ||
+                transaksiStatus.equals("menunggu_pembayaran", true)
     }
 
     private fun isPsBisaDibooking(item: PsMonitoringItem): Boolean {
@@ -134,7 +157,17 @@ class MonitoringFragment : Fragment() {
         return item.statusPs.equals("tersedia", true) &&
                 !transaksiStatus.equals("dijadwalkan", true) &&
                 !transaksiStatus.equals("waiting", true) &&
-                !transaksiStatus.equals("aktif", true)
+                !transaksiStatus.equals("aktif", true) &&
+                !transaksiStatus.equals("menunggu_pembayaran", true)
+    }
+
+    private fun isOwnedActive(item: PsMonitoringItem): Boolean {
+        val transaksi = item.activeTransaksi ?: return false
+        val status = transaksi.statusTransaksi ?: return false
+
+        return (status.equals("aktif", true) ||
+                status.equals("menunggu_pembayaran", true)) &&
+                transaksi.user?.idUser == currentUserId
     }
 
     private fun openTransaksiPage(item: PsMonitoringItem) {
@@ -146,6 +179,17 @@ class MonitoringFragment : Fragment() {
             putExtra("id_tipe", item.tipe?.idTipe ?: 0)
             putExtra("nama_tipe", item.tipe?.namaTipe ?: "")
             putExtra("harga_sewa", item.tipe?.hargaSewa ?: 0L)
+        }
+        startActivity(intent)
+    }
+
+    private fun openDetailTransaksiPage(item: PsMonitoringItem) {
+        if (!isOwnedActive(item)) return
+
+        val transaksi = item.activeTransaksi ?: return
+
+        val intent = Intent(requireContext(), DetailTransaksiActivity::class.java).apply {
+            putExtra("id_transaksi", transaksi.idTransaksi)
         }
         startActivity(intent)
     }

@@ -92,6 +92,71 @@
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Pilih waktu booking"
+                    android:textColor="#6B7280"
+                    android:textSize="12sp" />
+
+                <RadioGroup
+                    android:id="@+id/rgBookingMode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/rbBookingSekarang"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sekarang"
+                        android:textColor="#111827" />
+
+                    <RadioButton
+                        android:id="@+id/rbBookingNanti"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:text="Nanti"
+                        android:textColor="#111827" />
+                </RadioGroup>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Jam mulai"
+                        android:textColor="#6B7280" />
+
+                    <TextView
+                        android:id="@+id/tvJamMulai"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sekarang"
+                        android:textColor="#111827"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnPilihJam"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:backgroundTint="#0EA5E9"
+                    android:text="Pilih Jam Booking"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:visibility="gone" />
+
                 <Spinner
                     android:id="@+id/spinnerDurasi"
                     android:layout_width="match_parent"

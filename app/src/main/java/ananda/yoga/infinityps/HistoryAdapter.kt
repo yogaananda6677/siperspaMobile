@@ -61,8 +61,8 @@ class HistoryAdapter(
         }
 
         holder.tvDate.text = formatDate(item.tanggal)
-        holder.tvStatusTransaksi.text = item.statusTransaksi.replaceFirstChar { it.uppercase() }
-        holder.tvStatusBayar.text = item.pembayaran?.statusBayar?.replaceFirstChar { it.uppercase() } ?: "Menunggu"
+        holder.tvStatusTransaksi.text = formatStatusTransaksi(item.statusTransaksi)
+        holder.tvStatusBayar.text = formatStatusBayar(item.pembayaran?.statusBayar)
         holder.tvTotal.text = formatRupiah(item.totalHarga)
 
         holder.cardRoot.setOnClickListener {
@@ -70,15 +70,51 @@ class HistoryAdapter(
         }
     }
 
-    private fun formatRupiah(value: Long): String {
+    private fun formatStatusTransaksi(value: String): String {
+        return when (value.lowercase()) {
+            "aktif" -> "Berjalan"
+            "menunggu_pembayaran" -> "Menunggu Pembayaran"
+            "waiting" -> "Menunggu Approval"
+            "dijadwalkan" -> "Dijadwalkan"
+            "selesai" -> "Selesai"
+            "dibatalkan" -> "Dibatalkan"
+            "ditolak" -> "Ditolak"
+            else -> value.replaceFirstChar { it.uppercase() }
+        }
+    }
+
+    private fun formatStatusBayar(value: String?): String {
+        return when ((value ?: "menunggu").lowercase()) {
+            "menunggu_validasi" -> "Menunggu Validasi"
+            "menunggu" -> "Menunggu"
+            "lunas" -> "Lunas"
+            "gagal" -> "Gagal"
+            else -> value?.replaceFirstChar { it.uppercase() } ?: "Menunggu"
+        }
+    }
+
+    private fun formatRupiah(value: Double): String {
         return NumberFormat.getCurrencyInstance(Locale("id", "ID")).format(value)
     }
 
     private fun formatDate(value: String): String {
         return try {
-            val input = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault())
+            val inputFormats = listOf(
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault()),
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()),
+                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            )
             val output = SimpleDateFormat("dd MMM yyyy HH:mm", Locale("id", "ID"))
-            output.format(input.parse(value)!!)
+
+            for (format in inputFormats) {
+                try {
+                    val parsed = format.parse(value)
+                    if (parsed != null) return output.format(parsed)
+                } catch (_: Exception) {
+                }
+            }
+
+            value
         } catch (_: Exception) {
             value
         }

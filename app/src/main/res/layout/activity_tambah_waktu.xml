@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F3F6FB"
+    android:background="#F5F1FB"
     android:fillViewport="true">
 
     <LinearLayout
@@ -14,71 +14,43 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Pembayaran"
-            android:textColor="#111827"
+            android:text="Tambah Waktu"
             android:textSize="22sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:textColor="#1F2937" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
+            android:layout_marginTop="16dp"
             android:text="ID Transaksi"
-            android:textColor="#6B7280"
-            android:textSize="12sp" />
+            android:textColor="#6B7280" />
 
         <TextView
             android:id="@+id/tvIdTransaksi"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="#0"
-            android:textColor="#111827"
             android:textSize="20sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:textColor="#111827" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:text="Total Tagihan"
-            android:textColor="#6B7280"
-            android:textSize="12sp" />
-
-        <TextView
-            android:id="@+id/tvTotalTagihan"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Rp 0"
-            android:textColor="#2563EB"
-            android:textSize="24sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:text="Metode Pembayaran"
+            android:layout_marginTop="20dp"
+            android:text="Pilih tambahan waktu"
             android:textColor="#111827"
-            android:textSize="14sp"
             android:textStyle="bold" />
 
         <Spinner
-            android:id="@+id/spinnerMetodePembayaran"
+            android:id="@+id/spinnerMenitTambahan"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp" />
 
-        <TextView
-            android:id="@+id/tvInfoPembayaran"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="Info pembayaran"
-            android:textColor="#6B7280"
-            android:textSize="12sp" />
-
         <ProgressBar
-            android:id="@+id/progressBarBayar"
+            android:id="@+id/progressBarTambahWaktu"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
@@ -86,13 +58,13 @@
             android:visibility="gone" />
 
         <Button
-            android:id="@+id/btnBayarSekarang"
+            android:id="@+id/btnSimpanTambahWaktu"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
-            android:backgroundTint="#2563EB"
-            android:text="Kirim Pembayaran"
+            android:text="Simpan Tambahan Waktu"
             android:textAllCaps="false"
+            android:backgroundTint="#2563EB"
             android:textColor="#FFFFFF" />
 
     </LinearLayout>

@@ -3,7 +3,6 @@ package ananda.yoga.infinityps
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
-import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -24,7 +23,6 @@ class WelcomeActivity : AppCompatActivity() {
 
         val btnLogin = findViewById<Button>(R.id.btnLogin)
         val btnRegister = findViewById<Button>(R.id.btnRegister)
-        val tvGuest = findViewById<TextView>(R.id.tvGuest)
 
         btnLogin.setOnClickListener {
             startActivity(Intent(this, LoginActivity::class.java))
@@ -32,10 +30,6 @@ class WelcomeActivity : AppCompatActivity() {
 
         btnRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
-        }
-
-        tvGuest.setOnClickListener {
-            startActivity(Intent(this, MainActivity::class.java))
         }
     }
 }

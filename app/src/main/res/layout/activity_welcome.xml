@@ -118,7 +118,7 @@
             android:background="@drawable/bg_button_secondary"
             android:text="Daftar"
             android:textAllCaps="false"
-            android:textColor="@color/primary"
+            android:textColor="@color/white"
             android:textSize="16sp"
             android:fontFamily="sans-serif-medium" />
 

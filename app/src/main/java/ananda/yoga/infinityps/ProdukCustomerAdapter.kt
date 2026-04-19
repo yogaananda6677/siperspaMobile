@@ -3,7 +3,6 @@ package ananda.yoga.infinityps
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import java.util.Locale
@@ -18,8 +17,8 @@ class ProdukCustomerAdapter(
         val tvHargaProduk: TextView = itemView.findViewById(R.id.tvHargaProduk)
         val tvStockProduk: TextView = itemView.findViewById(R.id.tvStockProduk)
         val tvQtyProduk: TextView = itemView.findViewById(R.id.tvQtyProduk)
-        val btnMinus: ImageButton = itemView.findViewById(R.id.btnMinus)
-        val btnPlus: ImageButton = itemView.findViewById(R.id.btnPlus)
+        val btnMinus: TextView = itemView.findViewById(R.id.btnMinus)
+        val btnPlus: TextView = itemView.findViewById(R.id.btnPlus)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -35,13 +34,16 @@ class ProdukCustomerAdapter(
 
         holder.tvNamaProduk.text = item.produk.nama
         holder.tvHargaProduk.text = formatRupiah(item.produk.harga)
-        holder.tvStockProduk.text = "stok: ${item.produk.stock}"
+        holder.tvStockProduk.text = "Stok ${item.produk.stock}"
         holder.tvQtyProduk.text = item.qty.toString()
+
+        holder.btnMinus.alpha = if (item.qty > 0) 1f else 0.45f
+        holder.btnPlus.alpha = if (item.qty < item.produk.stock) 1f else 0.45f
 
         holder.btnMinus.setOnClickListener {
             if (item.qty > 0) {
                 item.qty--
-                holder.tvQtyProduk.text = item.qty.toString()
+                notifyItemChanged(position)
                 onQtyChanged()
             }
         }
@@ -49,7 +51,7 @@ class ProdukCustomerAdapter(
         holder.btnPlus.setOnClickListener {
             if (item.qty < item.produk.stock) {
                 item.qty++
-                holder.tvQtyProduk.text = item.qty.toString()
+                notifyItemChanged(position)
                 onQtyChanged()
             }
         }

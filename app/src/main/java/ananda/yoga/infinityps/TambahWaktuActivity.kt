@@ -3,8 +3,10 @@ package ananda.yoga.infinityps
 import android.content.Context
 import android.os.Bundle
 import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.Spinner
 import android.widget.TextView
@@ -16,6 +18,7 @@ import java.util.Locale
 
 class TambahWaktuActivity : AppCompatActivity() {
 
+    private lateinit var btnBack: ImageView
     private lateinit var tvIdTransaksi: TextView
     private lateinit var tvNomorPs: TextView
     private lateinit var tvNamaTipe: TextView
@@ -36,6 +39,16 @@ class TambahWaktuActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_tambah_waktu)
 
+        bindViews()
+        readIntent()
+        setupHeader()
+        setupSpinner()
+        setupActions()
+        updateEstimasi()
+    }
+
+    private fun bindViews() {
+        btnBack = findViewById(R.id.btnBack)
         tvIdTransaksi = findViewById(R.id.tvIdTransaksi)
         tvNomorPs = findViewById(R.id.tvNomorPs)
         tvNamaTipe = findViewById(R.id.tvNamaTipe)
@@ -45,24 +58,31 @@ class TambahWaktuActivity : AppCompatActivity() {
         spinnerMenit = findViewById(R.id.spinnerMenitTambahan)
         btnSimpan = findViewById(R.id.btnSimpanTambahWaktu)
         progressBar = findViewById(R.id.progressBarTambahWaktu)
+    }
 
+    private fun readIntent() {
         idTransaksi = intent.getIntExtra("id_transaksi", 0)
         idPs = intent.getIntExtra("id_ps", 0)
         nomorPs = intent.getStringExtra("nomor_ps") ?: "-"
         namaTipe = intent.getStringExtra("nama_tipe") ?: "-"
         hargaSewa = intent.getLongExtra("harga_sewa", 0L)
+    }
 
+    private fun setupHeader() {
         tvIdTransaksi.text = "#$idTransaksi"
-        tvNomorPs.text = nomorPs
+        tvNomorPs.text = "PS $nomorPs"
         tvNamaTipe.text = namaTipe
         tvHargaPerJam.text = "${formatRupiah(hargaSewa)}/jam"
+    }
 
-        setupSpinner()
-        updateEstimasi()
+    private fun setupSpinner() {
+        val items = listOf("30 menit", "60 menit", "90 menit", "120 menit")
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items)
+        spinnerMenit.adapter = adapter
 
-        spinnerMenit.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+        spinnerMenit.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
-                parent: android.widget.AdapterView<*>?,
+                parent: AdapterView<*>?,
                 view: View?,
                 position: Int,
                 id: Long
@@ -70,18 +90,18 @@ class TambahWaktuActivity : AppCompatActivity() {
                 updateEstimasi()
             }
 
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) = Unit
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+        }
+    }
+
+    private fun setupActions() {
+        btnBack.setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
         }
 
         btnSimpan.setOnClickListener {
             submitTambahWaktu()
         }
-    }
-
-    private fun setupSpinner() {
-        val items = listOf("30 menit", "60 menit", "90 menit", "120 menit")
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items)
-        spinnerMenit.adapter = adapter
     }
 
     private fun getMenitTambahan(): Int {
@@ -149,7 +169,9 @@ class TambahWaktuActivity : AppCompatActivity() {
     private fun setLoading(isLoading: Boolean) {
         progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         btnSimpan.isEnabled = !isLoading
+        btnSimpan.alpha = if (isLoading) 0.7f else 1f
         spinnerMenit.isEnabled = !isLoading
+        btnBack.isEnabled = !isLoading
     }
 
     private fun formatRupiah(value: Long): String {

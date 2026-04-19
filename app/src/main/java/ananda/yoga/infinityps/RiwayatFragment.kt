@@ -71,6 +71,7 @@ class RiwayatFragment : Fragment() {
 
         rvHistory.layoutManager = LinearLayoutManager(requireContext())
         rvHistory.adapter = adapter
+        rvHistory.setHasFixedSize(true)
 
         setupFilters()
         setupSearch()
@@ -102,12 +103,10 @@ class RiwayatFragment : Fragment() {
         val transaksiOptions = listOf(
             "Semua Status Transaksi",
             "Berjalan",
-            "Menunggu Pembayaran",
             "Menunggu Approval",
             "Dijadwalkan",
             "Selesai",
             "Dibatalkan",
-            "Ditolak"
         )
 
         spinnerFilterTanggal.adapter = ArrayAdapter(

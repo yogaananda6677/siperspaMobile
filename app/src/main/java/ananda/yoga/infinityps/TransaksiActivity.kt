@@ -3,10 +3,10 @@ package ananda.yoga.infinityps
 import android.app.TimePickerDialog
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.RadioGroup
@@ -36,12 +36,10 @@ class TransaksiActivity : AppCompatActivity() {
     private lateinit var btnPilihJam: Button
 
     private lateinit var spinnerDurasi: Spinner
-    private lateinit var btnHitungSewa: Button
     private lateinit var tvJamSelesai: TextView
     private lateinit var tvSubtotalSewa: TextView
 
     private lateinit var rvProduk: RecyclerView
-    private lateinit var btnHitungProduk: Button
     private lateinit var tvSubtotalProduk: TextView
 
     private lateinit var tvSubtotalSewaRincian: TextView
@@ -50,6 +48,8 @@ class TransaksiActivity : AppCompatActivity() {
 
     private lateinit var btnSimpan: Button
     private lateinit var progressBar: ProgressBar
+
+    private lateinit var btnBack: ImageView
 
     private var idPs: Int = 0
     private var nomorPs: String = "-"
@@ -78,7 +78,6 @@ class TransaksiActivity : AppCompatActivity() {
         setupProdukList()
         setupActions()
         loadProduk()
-
         hitungSewa()
     }
 
@@ -94,12 +93,10 @@ class TransaksiActivity : AppCompatActivity() {
         btnPilihJam = findViewById(R.id.btnPilihJam)
 
         spinnerDurasi = findViewById(R.id.spinnerDurasi)
-        btnHitungSewa = findViewById(R.id.btnHitungSewa)
         tvJamSelesai = findViewById(R.id.tvJamSelesai)
         tvSubtotalSewa = findViewById(R.id.tvSubtotalSewa)
 
         rvProduk = findViewById(R.id.rvProduk)
-        btnHitungProduk = findViewById(R.id.btnHitungProduk)
         tvSubtotalProduk = findViewById(R.id.tvSubtotalProduk)
 
         tvSubtotalSewaRincian = findViewById(R.id.tvSubtotalSewaRincian)
@@ -108,6 +105,8 @@ class TransaksiActivity : AppCompatActivity() {
 
         btnSimpan = findViewById(R.id.btnSimpanTransaksi)
         progressBar = findViewById(R.id.progressBarTransaksi)
+
+        btnBack = findViewById(R.id.btnBack)
     }
 
     private fun readIntent() {
@@ -121,7 +120,7 @@ class TransaksiActivity : AppCompatActivity() {
     }
 
     private fun setupHeader() {
-        tvNomorPs.text = nomorPs
+        tvNomorPs.text = "PS $nomorPs"
         tvNamaTipe.text = namaTipe
         tvHargaPerJam.text = "${formatRupiah(hargaSewa)}/jam"
     }
@@ -131,6 +130,11 @@ class TransaksiActivity : AppCompatActivity() {
         val spinnerAdapter =
             ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, durasiList)
         spinnerDurasi.adapter = spinnerAdapter
+
+        spinnerDurasi.setSelection(1, false)
+        spinnerDurasi.onItemSelectedListener = SimpleItemSelectedListener {
+            hitungSewa()
+        }
     }
 
     private fun setupBookingMode() {
@@ -205,7 +209,7 @@ class TransaksiActivity : AppCompatActivity() {
         tvJamMulai.text = if (bookingMode == "sekarang") {
             "Sekarang"
         } else {
-            val sdf = SimpleDateFormat("dd MMM yyyy HH:mm", Locale("id", "ID"))
+            val sdf = SimpleDateFormat("dd MMM yyyy • HH:mm", Locale("id", "ID"))
             sdf.format(selectedStartCalendar.time)
         }
     }
@@ -221,17 +225,10 @@ class TransaksiActivity : AppCompatActivity() {
     }
 
     private fun setupActions() {
-        btnHitungSewa.setOnClickListener {
-            hitungSewa()
-            Toast.makeText(this, "Subtotal sewa diperbarui", Toast.LENGTH_SHORT).show()
-        }
 
-        btnHitungProduk.setOnClickListener {
-            updateSubtotalProduk()
-            updateGrandTotal()
-            Toast.makeText(this, "Subtotal produk diperbarui", Toast.LENGTH_SHORT).show()
+        btnBack.setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
         }
-
         btnSimpan.setOnClickListener {
             submitTransaksi()
         }
@@ -279,7 +276,7 @@ class TransaksiActivity : AppCompatActivity() {
         }
 
         val selesai = Date(mulaiMillis + (durasiMenit * 60 * 1000L))
-        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val sdf = SimpleDateFormat("HH:mm", Locale("id", "ID"))
 
         tvJamSelesai.text = sdf.format(selesai)
         tvSubtotalSewa.text = formatRupiah(subtotalSewa)
@@ -357,12 +354,6 @@ class TransaksiActivity : AppCompatActivity() {
                 val prefs = getSharedPreferences("app_session", Context.MODE_PRIVATE)
                 val token = prefs.getString("token", "") ?: ""
 
-                Log.d("BOOKING", "TOKEN=$token")
-                Log.d("BOOKING", "ID_USER=$idUser")
-                Log.d("BOOKING", "ID_PS=$idPs")
-                Log.d("BOOKING", "JAM_MULAI=${selectedJamMulaiForApi()}")
-                Log.d("BOOKING", "REQUEST=$request")
-
                 val response = RetrofitClient.apiService.createTransaksi(
                     "Bearer $token",
                     "application/json",
@@ -379,10 +370,6 @@ class TransaksiActivity : AppCompatActivity() {
                     Toast.makeText(this@TransaksiActivity, msg, Toast.LENGTH_LONG).show()
                     finish()
                 } else {
-                    val errorBody = response.errorBody()?.string()
-                    Log.e("BOOKING", "CODE=${response.code()}")
-                    Log.e("BOOKING", "ERROR=$errorBody")
-
                     Toast.makeText(
                         this@TransaksiActivity,
                         "Gagal menyimpan transaksi: ${response.code()}",
@@ -390,7 +377,6 @@ class TransaksiActivity : AppCompatActivity() {
                     ).show()
                 }
             } catch (e: Exception) {
-                Log.e("BOOKING", "EXCEPTION", e)
                 Toast.makeText(
                     this@TransaksiActivity,
                     "Gagal terhubung ke server: ${e.message}",
@@ -405,6 +391,7 @@ class TransaksiActivity : AppCompatActivity() {
     private fun setLoading(isLoading: Boolean) {
         progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         btnSimpan.isEnabled = !isLoading
+        btnSimpan.alpha = if (isLoading) 0.7f else 1f
     }
 
     private fun formatRupiah(value: Long): String {

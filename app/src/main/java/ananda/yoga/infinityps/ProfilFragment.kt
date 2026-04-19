@@ -26,7 +26,7 @@ class ProfilFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         return inflater.inflate(R.layout.fragment_profil, container, false)
     }
 
@@ -34,9 +34,21 @@ class ProfilFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         preferences = requireActivity().getSharedPreferences(
-            "app_session", android.content.Context.MODE_PRIVATE
+            "app_session",
+            android.content.Context.MODE_PRIVATE
         )
 
+        bindViews(view)
+        setupActions()
+        loadUserData()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadUserData()
+    }
+
+    private fun bindViews(view: View) {
         tvInitial = view.findViewById(R.id.tvInitial)
         tvName = view.findViewById(R.id.tvName)
         tvUsername = view.findViewById(R.id.tvUsername)
@@ -44,9 +56,9 @@ class ProfilFragment : Fragment() {
         tvRoleValue = view.findViewById(R.id.tvRoleValue)
         btnEditProfile = view.findViewById(R.id.btnEditProfile)
         btnLogout = view.findViewById(R.id.btnLogout)
+    }
 
-        loadUserData()
-
+    private fun setupActions() {
         btnEditProfile.setOnClickListener {
             startActivity(Intent(requireContext(), EditProfilActivity::class.java))
         }
@@ -54,11 +66,6 @@ class ProfilFragment : Fragment() {
         btnLogout.setOnClickListener {
             showLogoutDialog()
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        loadUserData()
     }
 
     private fun loadUserData() {
@@ -76,7 +83,7 @@ class ProfilFragment : Fragment() {
 
         tvInitial.text = initial.ifEmpty { "?" }
         tvName.text = name
-        tvUsername.text = "@$username"
+        tvUsername.text = if (username == "-") "-" else "@$username"
         tvEmailValue.text = email
         tvRoleValue.text = role.replaceFirstChar { it.uppercaseChar() }
     }
@@ -93,8 +100,9 @@ class ProfilFragment : Fragment() {
     private fun doLogout() {
         preferences.edit().clear().apply()
 
-        val intent = Intent(requireActivity(), LoginActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val intent = Intent(requireActivity(), LoginActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
         startActivity(intent)
     }
 }

@@ -1,10 +1,8 @@
 package ananda.yoga.infinityps
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
@@ -33,15 +31,13 @@ class MonitoringAdapter(
         val cardRoot: CardView = itemView.findViewById(R.id.cardRoot)
         val tvNomorPs: TextView = itemView.findViewById(R.id.tvNomorPs)
         val tvTipePs: TextView = itemView.findViewById(R.id.tvTipePs)
+        val tvHarga: TextView = itemView.findViewById(R.id.tvHarga)
         val tvStatus: TextView = itemView.findViewById(R.id.tvStatus)
         val tvActionHint: TextView = itemView.findViewById(R.id.tvActionHint)
-        val layoutAktif: LinearLayout = itemView.findViewById(R.id.layoutAktif)
         val tvPelanggan: TextView = itemView.findViewById(R.id.tvPelanggan)
         val tvUsername: TextView = itemView.findViewById(R.id.tvUsername)
         val tvJamMulai: TextView = itemView.findViewById(R.id.tvJamMulai)
         val tvDurasi: TextView = itemView.findViewById(R.id.tvDurasi)
-        val layoutProduk: LinearLayout = itemView.findViewById(R.id.layoutProduk)
-        val tvProdukList: TextView = itemView.findViewById(R.id.tvProdukList)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -54,39 +50,19 @@ class MonitoringAdapter(
         val item = getItem(position)
         val ctx = holder.itemView.context
 
-        holder.tvNomorPs.text = "PS ${item.nomorPs}"
-        holder.tvTipePs.text = item.tipe?.namaTipe ?: "-"
-        holder.tvActionHint.visibility = View.GONE
+        holder.tvNomorPs.text = item.nomorPs
+        holder.tvTipePs.text = item.tipe?.namaTipe ?: "Tanpa tipe"
+        holder.tvHarga.text = formatRupiah(item.tipe?.hargaSewa ?: 0L)
 
-        holder.layoutAktif.visibility = View.GONE
-        holder.layoutProduk.visibility = View.GONE
-        holder.tvPelanggan.visibility = View.GONE
-        holder.tvUsername.visibility = View.GONE
-        holder.tvProdukList.text = ""
-        holder.tvJamMulai.text = ""
-        holder.tvDurasi.text = ""
-
-        holder.cardRoot.setOnClickListener(null)
-        holder.cardRoot.isClickable = false
-        holder.cardRoot.isFocusable = false
-        holder.cardRoot.alpha = 1.0f
+        resetView(holder)
 
         val transaksi = item.activeTransaksi
         val transaksiStatus = transaksi?.statusTransaksi?.lowercase()
-        val sewa = transaksi?.detailSewa?.firstOrNull { it.idPs == item.idPs }
         val statusBayar = transaksi?.pembayaran?.statusBayar?.lowercase()
         val transaksiUserId = transaksi?.user?.idUser
+        val sewa = transaksi?.detailSewa?.firstOrNull { it.idPs == item.idPs }
 
-        val isOwnedActive =
-            (transaksiStatus == "aktif" || transaksiStatus == "menunggu_pembayaran") &&
-                    transaksiUserId == currentUserId
-
-        Log.d(
-            "MONITORING_ADAPTER",
-            "ps=${item.nomorPs}, statusPs=${item.statusPs}, transaksiStatus=$transaksiStatus, " +
-                    "statusBayar=$statusBayar, transaksiUserId=$transaksiUserId, currentUserId=$currentUserId, " +
-                    "isOwnedActive=$isOwnedActive"
-        )
+        val isOwnedActive = transaksiStatus == "aktif" && transaksiUserId == currentUserId
 
         when {
             item.statusPs.equals("maintenance", true) -> {
@@ -94,33 +70,61 @@ class MonitoringAdapter(
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_maintenance)
                 holder.tvStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_maintenance_text))
                 holder.cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.card_default_bg))
-                holder.layoutAktif.visibility = View.VISIBLE
+                holder.cardRoot.alpha = 0.90f
                 holder.tvJamMulai.text = "Unit sedang perbaikan"
                 holder.tvDurasi.text = "Belum bisa digunakan"
-                holder.cardRoot.alpha = 0.88f
             }
 
-            isOwnedActive && statusBayar == "menunggu_validasi" -> {
+            transaksiStatus == "waiting" -> {
+                holder.tvStatus.text = "Menunggu Persetujuan"
+                holder.tvStatus.setBackgroundResource(R.drawable.bg_status_booking)
+                holder.tvStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_booking_text))
+                holder.cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.card_default_bg))
+
+                showUserInfo(holder, transaksi?.user?.name, transaksi?.user?.username)
+                holder.tvJamMulai.text = if (sewa?.jamMulai != null) {
+                    "Mulai ${formatJam(sewa.jamMulai)}"
+                } else {
+                    "Booking pending"
+                }
+                holder.tvDurasi.text = "Menunggu persetujuan admin"
+            }
+
+            transaksiStatus == "dijadwalkan" -> {
+                holder.tvStatus.text = "Dijadwalkan"
+                holder.tvStatus.setBackgroundResource(R.drawable.bg_status_booking)
+                holder.tvStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_booking_text))
+                holder.cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.card_default_bg))
+
+                showUserInfo(holder, transaksi?.user?.name, transaksi?.user?.username)
+                holder.tvJamMulai.text = "Mulai ${formatJam(sewa?.jamMulai)}"
+                holder.tvDurasi.text = "Sudah dibooking"
+            }
+
+            statusBayar == "menunggu_validasi" -> {
                 holder.tvStatus.text = "Menunggu Validasi"
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_booking)
                 holder.tvStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_booking_text))
                 holder.cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.card_owned_active_bg))
-                holder.layoutAktif.visibility = View.VISIBLE
-                holder.tvActionHint.visibility = View.VISIBLE
-                holder.tvActionHint.text = "Kelola"
+
+                showUserInfo(holder, transaksi?.user?.name, transaksi?.user?.username)
 
                 if (sewa != null) {
                     val remainingSeconds = calculateRemainingSeconds(sewa.jamSelesai)
                     holder.tvJamMulai.text = formatCountdown(remainingSeconds)
-                    holder.tvDurasi.text = "Pembayaran cash menunggu admin"
                 } else {
-                    holder.tvJamMulai.text = "Transaksi kamu aktif"
-                    holder.tvDurasi.text = "Pembayaran cash menunggu admin"
+                    holder.tvJamMulai.text = "Transaksi aktif"
                 }
 
-                holder.cardRoot.isClickable = true
-                holder.cardRoot.isFocusable = true
-                holder.cardRoot.setOnClickListener { onOwnedActiveClick(item) }
+                holder.tvDurasi.text = "Pembayaran cash menunggu validasi admin"
+
+                if (transaksiUserId == currentUserId) {
+                    holder.tvActionHint.visibility = View.VISIBLE
+                    holder.tvActionHint.text = "Kelola"
+                    holder.cardRoot.isClickable = true
+                    holder.cardRoot.isFocusable = true
+                    holder.cardRoot.setOnClickListener { onOwnedActiveClick(item) }
+                }
             }
 
             isOwnedActive -> {
@@ -128,7 +132,9 @@ class MonitoringAdapter(
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_owned_active)
                 holder.tvStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_owned_active_text))
                 holder.cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.card_owned_active_bg))
-                holder.layoutAktif.visibility = View.VISIBLE
+
+                showUserInfo(holder, transaksi?.user?.name, transaksi?.user?.username)
+
                 holder.tvActionHint.visibility = View.VISIBLE
                 holder.tvActionHint.text = "Detail"
 
@@ -138,15 +144,12 @@ class MonitoringAdapter(
                     holder.tvDurasi.text = when (statusBayar) {
                         "lunas" -> "Lunas • Tap lihat detail"
                         "menunggu" -> "Belum dibayar • Tap kelola"
-                        else -> "Belum lunas • Tap kelola"
+                        "gagal" -> "Pembayaran gagal"
+                        else -> "Tap untuk kelola transaksi"
                     }
                 } else {
-                    holder.tvJamMulai.text = "Transaksi kamu aktif"
-                    holder.tvDurasi.text = when (statusBayar) {
-                        "lunas" -> "Lunas • Tap lihat detail"
-                        "menunggu" -> "Belum dibayar • Tap kelola"
-                        else -> "Tap untuk kelola"
-                    }
+                    holder.tvJamMulai.text = "Transaksi aktif"
+                    holder.tvDurasi.text = "Tap untuk kelola transaksi"
                 }
 
                 holder.cardRoot.isClickable = true
@@ -154,15 +157,13 @@ class MonitoringAdapter(
                 holder.cardRoot.setOnClickListener { onOwnedActiveClick(item) }
             }
 
-            item.statusPs.equals("digunakan", true) ||
-                    transaksiStatus == "aktif" ||
-                    transaksiStatus == "menunggu_pembayaran" -> {
-
+            item.statusPs.equals("digunakan", true) || transaksiStatus == "aktif" -> {
                 holder.tvStatus.text = "Digunakan"
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_aktif)
                 holder.tvStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_aktif_text))
                 holder.cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.card_aktif_bg))
-                holder.layoutAktif.visibility = View.VISIBLE
+
+                showUserInfo(holder, transaksi?.user?.name, transaksi?.user?.username)
 
                 if (sewa != null) {
                     val remainingSeconds = calculateRemainingSeconds(sewa.jamSelesai)
@@ -174,39 +175,15 @@ class MonitoringAdapter(
                 }
             }
 
-            transaksiStatus == "dijadwalkan" -> {
-                holder.tvStatus.text = "Dijadwalkan"
-                holder.tvStatus.setBackgroundResource(R.drawable.bg_status_booking)
-                holder.tvStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_booking_text))
-                holder.cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.card_default_bg))
-                holder.layoutAktif.visibility = View.VISIBLE
-                holder.cardRoot.alpha = 0.92f
-
-                holder.tvJamMulai.text = "Mulai ${formatJam(sewa?.jamMulai)}"
-                holder.tvDurasi.text = "Sudah dibooking"
-            }
-
-            transaksiStatus == "waiting" -> {
-                holder.tvStatus.text = "Menunggu"
-                holder.tvStatus.setBackgroundResource(R.drawable.bg_status_booking)
-                holder.tvStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_booking_text))
-                holder.cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.card_default_bg))
-                holder.layoutAktif.visibility = View.VISIBLE
-                holder.cardRoot.alpha = 0.92f
-
-                holder.tvJamMulai.text = "Booking pending"
-                holder.tvDurasi.text = "Menunggu approval"
-            }
-
             else -> {
                 holder.tvStatus.text = "Tersedia"
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_tersedia)
                 holder.tvStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_tersedia_text))
                 holder.cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.card_default_bg))
-                holder.layoutAktif.visibility = View.VISIBLE
+
                 holder.tvActionHint.visibility = View.VISIBLE
                 holder.tvActionHint.text = "Booking"
-                holder.tvJamMulai.text = "Siap dipakai"
+                holder.tvJamMulai.text = "Siap dipakai sekarang"
                 holder.tvDurasi.text = "Tap untuk booking"
 
                 holder.cardRoot.isClickable = true
@@ -214,6 +191,26 @@ class MonitoringAdapter(
                 holder.cardRoot.setOnClickListener { onAvailableClick(item) }
             }
         }
+    }
+
+    private fun resetView(holder: ViewHolder) {
+        holder.tvActionHint.visibility = View.GONE
+        holder.tvPelanggan.visibility = View.GONE
+        holder.tvUsername.visibility = View.GONE
+        holder.tvJamMulai.text = ""
+        holder.tvDurasi.text = ""
+
+        holder.cardRoot.setOnClickListener(null)
+        holder.cardRoot.isClickable = false
+        holder.cardRoot.isFocusable = false
+        holder.cardRoot.alpha = 1.0f
+    }
+
+    private fun showUserInfo(holder: ViewHolder, name: String?, username: String?) {
+        holder.tvPelanggan.visibility = View.VISIBLE
+        holder.tvUsername.visibility = View.VISIBLE
+        holder.tvPelanggan.text = name ?: "Pengguna"
+        holder.tvUsername.text = username?.let { "@$it" } ?: ""
     }
 
     private fun calculateRemainingSeconds(jamSelesai: String?): Long {
@@ -252,5 +249,9 @@ class MonitoringAdapter(
         } else {
             cleaned.take(5)
         }
+    }
+
+    private fun formatRupiah(value: Long): String {
+        return "Rp${"%,d".format(Locale("in", "ID"), value).replace(',', '.')}/jam"
     }
 }

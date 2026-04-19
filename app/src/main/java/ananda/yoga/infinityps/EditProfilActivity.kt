@@ -2,9 +2,9 @@ package ananda.yoga.infinityps
 
 import android.content.Context
 import android.os.Bundle
-import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 
 class EditProfilActivity : AppCompatActivity() {
 
+    private lateinit var btnBack: ImageView
     private lateinit var etName: EditText
     private lateinit var etUsername: EditText
     private lateinit var etEmail: EditText
@@ -23,13 +24,24 @@ class EditProfilActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_profil)
 
+        bindViews()
+        loadCurrentData()
+        setupActions()
+    }
+
+    private fun bindViews() {
+        btnBack = findViewById(R.id.btnBack)
         etName = findViewById(R.id.etName)
         etUsername = findViewById(R.id.etUsername)
         etEmail = findViewById(R.id.etEmail)
         btnSimpan = findViewById(R.id.btnSimpanProfile)
         progressBar = findViewById(R.id.progressBarEditProfile)
+    }
 
-        loadCurrentData()
+    private fun setupActions() {
+        btnBack.setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
 
         btnSimpan.setOnClickListener {
             submitUpdateProfile()
@@ -83,7 +95,11 @@ class EditProfilActivity : AppCompatActivity() {
                             .apply()
                     }
 
-                    Toast.makeText(this@EditProfilActivity, "Profil berhasil diperbarui", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@EditProfilActivity,
+                        "Profil berhasil diperbarui",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     finish()
                 } else {
                     Toast.makeText(
@@ -105,7 +121,12 @@ class EditProfilActivity : AppCompatActivity() {
     }
 
     private fun setLoading(isLoading: Boolean) {
-        progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        progressBar.visibility = if (isLoading) android.view.View.VISIBLE else android.view.View.GONE
         btnSimpan.isEnabled = !isLoading
+        btnSimpan.alpha = if (isLoading) 0.7f else 1f
+        btnBack.isEnabled = !isLoading
+        etName.isEnabled = !isLoading
+        etUsername.isEnabled = !isLoading
+        etEmail.isEnabled = !isLoading
     }
 }

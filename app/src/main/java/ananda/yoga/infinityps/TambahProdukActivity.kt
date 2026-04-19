@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -16,6 +17,7 @@ import kotlinx.coroutines.launch
 
 class TambahProdukActivity : AppCompatActivity() {
 
+    private lateinit var btnBack: ImageView
     private lateinit var tvIdTransaksi: TextView
     private lateinit var tvNomorPs: TextView
     private lateinit var tvNamaTipe: TextView
@@ -36,6 +38,16 @@ class TambahProdukActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_tambah_produk)
 
+        bindViews()
+        readIntent()
+        setupHeader()
+        setupList()
+        setupActions()
+        loadProduk()
+    }
+
+    private fun bindViews() {
+        btnBack = findViewById(R.id.btnBack)
         tvIdTransaksi = findViewById(R.id.tvIdTransaksi)
         tvNomorPs = findViewById(R.id.tvNomorPs)
         tvNamaTipe = findViewById(R.id.tvNamaTipe)
@@ -44,25 +56,35 @@ class TambahProdukActivity : AppCompatActivity() {
         btnSimpan = findViewById(R.id.btnSimpanTambahProduk)
         progressBar = findViewById(R.id.progressBarTambahProduk)
         layoutEmpty = findViewById(R.id.layoutEmptyProduk)
+    }
 
+    private fun readIntent() {
         idTransaksi = intent.getIntExtra("id_transaksi", 0)
         nomorPs = intent.getStringExtra("nomor_ps") ?: "-"
         namaTipe = intent.getStringExtra("nama_tipe") ?: "-"
+    }
 
+    private fun setupHeader() {
         tvIdTransaksi.text = "#$idTransaksi"
-        tvNomorPs.text = nomorPs
+        tvNomorPs.text = "PS $nomorPs"
         tvNamaTipe.text = namaTipe
+    }
 
+    private fun setupList() {
         produkAdapter = ProdukCustomerAdapter(produkItems) {}
 
         rvProduk.layoutManager = LinearLayoutManager(this)
         rvProduk.adapter = produkAdapter
+    }
+
+    private fun setupActions() {
+        btnBack.setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
 
         btnSimpan.setOnClickListener {
             submitTambahProduk()
         }
-
-        loadProduk()
     }
 
     private fun loadProduk() {
@@ -165,6 +187,12 @@ class TambahProdukActivity : AppCompatActivity() {
     private fun setLoading(isLoading: Boolean) {
         progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         btnSimpan.isEnabled = !isLoading
-        rvProduk.visibility = if (isLoading) View.GONE else View.VISIBLE
+        btnSimpan.alpha = if (isLoading) 0.7f else 1f
+        btnBack.isEnabled = !isLoading
+
+        if (isLoading) {
+            rvProduk.visibility = View.GONE
+            layoutEmpty.visibility = View.GONE
+        }
     }
 }

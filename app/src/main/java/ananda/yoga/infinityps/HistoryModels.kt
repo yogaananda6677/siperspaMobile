@@ -44,7 +44,8 @@ data class HistoryPlaystation(
 
 data class HistoryTipePs(
     @SerializedName("id_tipe") val idTipe: Int,
-    @SerializedName("nama_tipe") val namaTipe: String
+    @SerializedName("nama_tipe") val namaTipe: String,
+    @SerializedName("harga_sewa") val hargaSewa: Long = 0L
 )
 
 data class HistoryDetailProduk(

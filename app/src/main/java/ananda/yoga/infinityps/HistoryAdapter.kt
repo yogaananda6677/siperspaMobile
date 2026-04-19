@@ -1,12 +1,11 @@
 package ananda.yoga.infinityps
 
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -50,8 +49,8 @@ class HistoryAdapter(
         val item = getItem(position)
 
         val psName = item.detailSewa.firstOrNull()?.playstation?.nomorPs
-        holder.tvTitle.text = if (psName != null) {
-            "Transaksi #${item.idTransaksi} • PS $psName"
+        holder.tvTitle.text = if (!psName.isNullOrBlank()) {
+            "Transaksi #${item.idTransaksi} • $psName"
         } else {
             "Transaksi #${item.idTransaksi}"
         }
@@ -63,17 +62,13 @@ class HistoryAdapter(
         }
 
         holder.tvDate.text = formatDate(item.tanggal)
+        holder.tvTotal.text = formatRupiah(item.totalHarga)
 
-        val statusTransaksiText = formatStatusTransaksi(item.statusTransaksi)
-        val statusBayarText = formatStatusBayar(item.pembayaran?.statusBayar)
-
-        holder.tvStatusTransaksi.text = statusTransaksiText
-        holder.tvStatusBayar.text = statusBayarText
+        holder.tvStatusTransaksi.text = formatStatusTransaksi(item.statusTransaksi)
+        holder.tvStatusBayar.text = formatStatusBayar(item.pembayaran?.statusBayar)
 
         applyStatusTransaksiStyle(holder.tvStatusTransaksi, item.statusTransaksi)
         applyStatusBayarStyle(holder.tvStatusBayar, item.pembayaran?.statusBayar)
-
-        holder.tvTotal.text = formatRupiah(item.totalHarga)
 
         holder.cardRoot.setOnClickListener {
             onClick(item)
@@ -81,36 +76,51 @@ class HistoryAdapter(
     }
 
     private fun applyStatusTransaksiStyle(textView: TextView, status: String) {
+        val context = textView.context
         when (status.lowercase()) {
-            "aktif" -> setBadge(textView, "#EDE9FE", "#6D28D9")
-            "menunggu_pembayaran" -> setBadge(textView, "#FEF3C7", "#B45309")
-            "waiting" -> setBadge(textView, "#FEF3C7", "#B45309")
-            "dijadwalkan" -> setBadge(textView, "#FFE4D6", "#C2410C")
-            "selesai" -> setBadge(textView, "#DCFCE7", "#15803D")
-            "dibatalkan", "ditolak" -> setBadge(textView, "#FEE2E2", "#B91C1C")
-            else -> setBadge(textView, "#E5E7EB", "#374151")
+            "aktif" -> {
+                textView.setBackgroundResource(R.drawable.bg_status_owned_active)
+                textView.setTextColor(ContextCompat.getColor(context, R.color.status_owned_active_text))
+            }
+            "menunggu_pembayaran", "waiting", "dijadwalkan" -> {
+                textView.setBackgroundResource(R.drawable.bg_status_booking)
+                textView.setTextColor(ContextCompat.getColor(context, R.color.status_booking_text))
+            }
+            "selesai" -> {
+                textView.setBackgroundResource(R.drawable.bg_status_tersedia)
+                textView.setTextColor(ContextCompat.getColor(context, R.color.status_tersedia_text))
+            }
+            "dibatalkan", "ditolak" -> {
+                textView.setBackgroundResource(R.drawable.bg_status_danger)
+                textView.setTextColor(ContextCompat.getColor(context, R.color.status_danger_text))
+            }
+            else -> {
+                textView.setBackgroundResource(R.drawable.bg_status_neutral)
+                textView.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+            }
         }
     }
 
     private fun applyStatusBayarStyle(textView: TextView, status: String?) {
+        val context = textView.context
         when ((status ?: "menunggu").lowercase()) {
-            "lunas" -> setBadge(textView, "#FEF3C7", "#B45309")
-            "menunggu_validasi" -> setBadge(textView, "#FEF3C7", "#B45309")
-            "menunggu" -> setBadge(textView, "#FEF3C7", "#B45309")
-            "gagal" -> setBadge(textView, "#FEE2E2", "#B91C1C")
-            else -> setBadge(textView, "#E5E7EB", "#374151")
+            "lunas" -> {
+                textView.setBackgroundResource(R.drawable.bg_status_tersedia)
+                textView.setTextColor(ContextCompat.getColor(context, R.color.status_tersedia_text))
+            }
+            "menunggu_validasi", "menunggu" -> {
+                textView.setBackgroundResource(R.drawable.bg_status_booking)
+                textView.setTextColor(ContextCompat.getColor(context, R.color.status_booking_text))
+            }
+            "gagal" -> {
+                textView.setBackgroundResource(R.drawable.bg_status_danger)
+                textView.setTextColor(ContextCompat.getColor(context, R.color.status_danger_text))
+            }
+            else -> {
+                textView.setBackgroundResource(R.drawable.bg_status_neutral)
+                textView.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+            }
         }
-    }
-
-    private fun setBadge(textView: TextView, bgColor: String, textColor: String) {
-        val drawable = GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            cornerRadius = 24f
-            setColor(Color.parseColor(bgColor))
-        }
-        textView.background = drawable
-        textView.setTextColor(Color.parseColor(textColor))
-        textView.setPadding(20, 10, 20, 10)
     }
 
     private fun formatStatusTransaksi(value: String): String {
@@ -147,7 +157,7 @@ class HistoryAdapter(
                 SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()),
                 SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
             )
-            val output = SimpleDateFormat("dd MMM yyyy HH:mm", Locale("id", "ID"))
+            val output = SimpleDateFormat("dd MMM yyyy • HH:mm", Locale("id", "ID"))
 
             for (format in inputFormats) {
                 try {
@@ -156,7 +166,6 @@ class HistoryAdapter(
                 } catch (_: Exception) {
                 }
             }
-
             value
         } catch (_: Exception) {
             value

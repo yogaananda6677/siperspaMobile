@@ -3,8 +3,10 @@ package ananda.yoga.infinityps
 import android.content.Context
 import android.os.Bundle
 import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.Spinner
 import android.widget.TextView
@@ -17,6 +19,7 @@ import java.util.Locale
 
 class PembayaranActivity : AppCompatActivity() {
 
+    private lateinit var btnBack: ImageView
     private lateinit var tvIdTransaksi: TextView
     private lateinit var tvTotalTagihan: TextView
     private lateinit var spinnerMetode: Spinner
@@ -31,20 +34,37 @@ class PembayaranActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pembayaran)
 
+        bindViews()
+        readIntent()
+        setupHeader()
+        setupSpinner()
+        setupActions()
+    }
+
+    private fun bindViews() {
+        btnBack = findViewById(R.id.btnBack)
         tvIdTransaksi = findViewById(R.id.tvIdTransaksi)
         tvTotalTagihan = findViewById(R.id.tvTotalTagihan)
         spinnerMetode = findViewById(R.id.spinnerMetodePembayaran)
         tvInfoPembayaran = findViewById(R.id.tvInfoPembayaran)
         btnBayar = findViewById(R.id.btnBayarSekarang)
         progressBar = findViewById(R.id.progressBarBayar)
+    }
 
+    private fun readIntent() {
         idTransaksi = intent.getIntExtra("id_transaksi", 0)
         totalHarga = intent.getDoubleExtra("total_harga", 0.0)
+    }
 
+    private fun setupHeader() {
         tvIdTransaksi.text = "#$idTransaksi"
         tvTotalTagihan.text = formatRupiah(totalHarga)
+    }
 
-        setupSpinner()
+    private fun setupActions() {
+        btnBack.setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
 
         btnBayar.setOnClickListener {
             submitPembayaran()
@@ -59,9 +79,9 @@ class PembayaranActivity : AppCompatActivity() {
         spinnerMetode.setSelection(0)
         updateInfoText("cash")
 
-        spinnerMetode.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+        spinnerMetode.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
-                parent: android.widget.AdapterView<*>?,
+                parent: AdapterView<*>?,
                 view: View?,
                 position: Int,
                 id: Long
@@ -70,15 +90,15 @@ class PembayaranActivity : AppCompatActivity() {
                 updateInfoText(metode)
             }
 
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) = Unit
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
         }
     }
 
     private fun updateInfoText(metode: String) {
         tvInfoPembayaran.text = if (metode == "cash") {
-            "Pembayaran cash hanya mengirim permintaan pembayaran. Admin akan memvalidasi pembayaran saat kamu membayar di kasir."
+            "Pembayaran cash hanya mengirim permintaan pembayaran. Admin akan memvalidasi saat kamu membayar di kasir."
         } else {
-            "Pembayaran online akan langsung diproses oleh sistem."
+            "Pembayaran online akan langsung diproses oleh sistem setelah kamu kirim pembayaran."
         }
     }
 
@@ -120,7 +140,6 @@ class PembayaranActivity : AppCompatActivity() {
 
                     finish()
                 } else {
-                    val errorBody = response.errorBody()?.string()
                     Toast.makeText(
                         this@PembayaranActivity,
                         "Gagal memproses pembayaran: ${response.code()}",
@@ -142,7 +161,9 @@ class PembayaranActivity : AppCompatActivity() {
     private fun setLoading(isLoading: Boolean) {
         progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         btnBayar.isEnabled = !isLoading
+        btnBayar.alpha = if (isLoading) 0.7f else 1f
         spinnerMetode.isEnabled = !isLoading
+        btnBack.isEnabled = !isLoading
     }
 
     private fun formatRupiah(value: Double): String {

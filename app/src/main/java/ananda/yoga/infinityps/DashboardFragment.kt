@@ -5,15 +5,19 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import java.text.NumberFormat
+import java.util.Locale
 
 class DashboardFragment : Fragment() {
 
@@ -28,11 +32,7 @@ class DashboardFragment : Fragment() {
     private lateinit var tvPsTersedia: TextView
     private lateinit var tvPsDipakai: TextView
     private lateinit var tvInfoUtama: TextView
-
-    private lateinit var tvPs3Tersedia: TextView
-    private lateinit var tvPs4Tersedia: TextView
-    private lateinit var tvPs5Tersedia: TextView
-    private lateinit var tvVipTersedia: TextView
+    private lateinit var tvInfoSecondary: TextView
 
     private lateinit var cardMonitoring: LinearLayout
     private lateinit var cardRiwayat: LinearLayout
@@ -40,6 +40,9 @@ class DashboardFragment : Fragment() {
 
     private lateinit var progressBar: ProgressBar
     private lateinit var contentLayout: LinearLayout
+
+    private lateinit var layoutTipeContainer: LinearLayout
+    private lateinit var sectionTipeWrapper: HorizontalScrollView
 
     private var currentUserName: String = "Pelanggan"
 
@@ -53,6 +56,18 @@ class DashboardFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        bindViews(view)
+        setupQuickMenu()
+        loadSessionGreeting()
+        fetchDashboardData()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        fetchDashboardData()
+    }
+
+    private fun bindViews(view: View) {
         tvGreeting = view.findViewById(R.id.tvGreeting)
         tvSubGreeting = view.findViewById(R.id.tvSubGreeting)
 
@@ -64,11 +79,7 @@ class DashboardFragment : Fragment() {
         tvPsTersedia = view.findViewById(R.id.tvPsTersedia)
         tvPsDipakai = view.findViewById(R.id.tvPsDipakai)
         tvInfoUtama = view.findViewById(R.id.tvInfoUtama)
-
-        tvPs3Tersedia = view.findViewById(R.id.tvPs3Tersedia)
-        tvPs4Tersedia = view.findViewById(R.id.tvPs4Tersedia)
-        tvPs5Tersedia = view.findViewById(R.id.tvPs5Tersedia)
-        tvVipTersedia = view.findViewById(R.id.tvVipTersedia)
+        tvInfoSecondary = view.findViewById(R.id.tvInfoSecondary)
 
         cardMonitoring = view.findViewById(R.id.cardMonitoring)
         cardRiwayat = view.findViewById(R.id.cardRiwayat)
@@ -77,22 +88,16 @@ class DashboardFragment : Fragment() {
         progressBar = view.findViewById(R.id.progressBar)
         contentLayout = view.findViewById(R.id.contentLayout)
 
-        setupQuickMenu()
-        loadSessionGreeting()
-        fetchDashboardData()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        fetchDashboardData()
+        layoutTipeContainer = view.findViewById(R.id.layoutTipeContainer)
+        sectionTipeWrapper = view.findViewById(R.id.sectionTipeWrapper)
     }
 
     private fun loadSessionGreeting() {
         val prefs = requireContext().getSharedPreferences("app_session", Context.MODE_PRIVATE)
         currentUserName = prefs.getString("name", "")?.takeIf { it.isNotBlank() } ?: "Pelanggan"
 
-        tvGreeting.text = "Hai, $currentUserName 👋"
-        tvSubGreeting.text = "Selamat datang kembali. Yuk cek status booking dan aktivitas kamu hari ini."
+        tvGreeting.text = "Halo, $currentUserName 👋"
+        tvSubGreeting.text = "Pantau booking, status PlayStation, dan aktivitas terbaru kamu dengan cepat."
     }
 
     private fun setupQuickMenu() {
@@ -178,66 +183,148 @@ class DashboardFragment : Fragment() {
         tvSelesai.text = selesai.toString()
         tvMenungguBayar.text = menungguBayar.toString()
 
-        val transaksiAktif = items.firstOrNull {
-            it.statusTransaksi.equals("aktif", true)
-        }
-
+        val transaksiAktif = items.firstOrNull { it.statusTransaksi.equals("aktif", true) }
         val transaksiMenungguValidasi = items.firstOrNull {
             it.pembayaran?.statusBayar?.equals("menunggu_validasi", true) == true
         }
 
+        val transaksiTerakhir = items.maxByOrNull { it.totalHarga }
+
         tvInfoUtama.text = when {
             transaksiMenungguValidasi != null ->
-                "Pembayaran cash kamu sedang menunggu validasi admin."
+                "Pembayaran kamu masih menunggu validasi admin."
             transaksiAktif != null ->
-                "Kamu masih punya transaksi yang sedang berjalan."
+                "Ada transaksi aktif yang sedang berjalan sekarang."
             total == 0 ->
-                "Belum ada transaksi. Yuk cek PS yang tersedia."
+                "Belum ada transaksi. Coba cek PlayStation yang tersedia."
             else ->
-                "Semua aktivitasmu terlihat normal hari ini."
+                "Semua aktivitas terlihat aman dan terkendali."
+        }
+
+        tvInfoSecondary.text = when {
+            transaksiTerakhir != null ->
+                "Total transaksi tertinggi: ${formatCurrency(transaksiTerakhir.totalHarga)}"
+            else ->
+                "Belum ada ringkasan transaksi untuk ditampilkan."
         }
     }
 
     private fun bindMonitoringInfo(items: List<PsMonitoringItem>) {
+        fun isSedangDipakai(item: PsMonitoringItem): Boolean {
+            val statusTransaksi = item.activeTransaksi?.statusTransaksi?.lowercase().orEmpty()
+            val statusPs = item.statusPs.lowercase()
+
+            return statusPs == "digunakan" ||
+                    statusTransaksi == "aktif" ||
+                    statusTransaksi == "menunggu_pembayaran" ||
+                    statusTransaksi == "waiting" ||
+                    statusTransaksi == "dijadwalkan"
+        }
+
         fun isTersedia(item: PsMonitoringItem): Boolean {
-            val statusTransaksi = item.activeTransaksi?.statusTransaksi
-            return item.statusPs.equals("tersedia", true) &&
-                    !statusTransaksi.equals("aktif", true) &&
-                    !statusTransaksi.equals("waiting", true) &&
-                    !statusTransaksi.equals("dijadwalkan", true) &&
-                    !statusTransaksi.equals("menunggu_pembayaran", true)
+            val statusPs = item.statusPs.lowercase()
+            return statusPs == "tersedia" && !isSedangDipakai(item)
         }
 
         val tersedia = items.count { isTersedia(it) }
-        val dipakai = items.count {
-            it.statusPs.equals("digunakan", true) ||
-                    it.activeTransaksi?.statusTransaksi.equals("aktif", true) ||
-                    it.activeTransaksi?.statusTransaksi.equals("menunggu_pembayaran", true)
-        }
-
-        val ps3Tersedia = items.count {
-            isTersedia(it) && it.tipe?.namaTipe.equals("PS3", true)
-        }
-
-        val ps4Tersedia = items.count {
-            isTersedia(it) && it.tipe?.namaTipe.equals("PS4", true)
-        }
-
-        val ps5Tersedia = items.count {
-            isTersedia(it) && it.tipe?.namaTipe.equals("PS5", true)
-        }
-
-        val vipTersedia = items.count {
-            isTersedia(it) && it.tipe?.namaTipe.equals("VIP", true)
-        }
+        val dipakai = items.count { isSedangDipakai(it) }
 
         tvPsTersedia.text = tersedia.toString()
         tvPsDipakai.text = dipakai.toString()
 
-        tvPs3Tersedia.text = "$ps3Tersedia tersedia"
-        tvPs4Tersedia.text = "$ps4Tersedia tersedia"
-        tvPs5Tersedia.text = "$ps5Tersedia tersedia"
-        tvVipTersedia.text = "$vipTersedia tersedia"
+        bindDynamicTipeCards(items, ::isTersedia)
+    }
+
+    /**
+     * Logika tipe yang benar:
+     * - ambil dari relasi database: ps -> tipe -> namaTipe
+     * - jangan jadikan PS3/PS4/PS5/VIP sebagai sumber kebenaran
+     * - UI mengikuti hasil grouping dari API
+     */
+    private fun bindDynamicTipeCards(
+        items: List<PsMonitoringItem>,
+        isTersediaChecker: (PsMonitoringItem) -> Boolean
+    ) {
+        layoutTipeContainer.removeAllViews()
+
+        val groupedByTipe = items
+            .groupBy { item ->
+                item.tipe?.namaTipe?.trim()?.ifBlank { "Lainnya" } ?: "Lainnya"
+            }
+            .toSortedMap(compareBy { it.uppercase() })
+
+        if (groupedByTipe.isEmpty()) {
+            sectionTipeWrapper.visibility = View.GONE
+            return
+        }
+
+        sectionTipeWrapper.visibility = View.VISIBLE
+
+        groupedByTipe.forEach { (namaTipe, list) ->
+            val totalTipe = list.size
+            val tersediaTipe = list.count { isTersediaChecker(it) }
+
+            val card = createTipeCard(
+                title = namaTipe,
+                available = tersediaTipe,
+                total = totalTipe
+            )
+
+            layoutTipeContainer.addView(card)
+        }
+    }
+
+    private fun createTipeCard(title: String, available: Int, total: Int): View {
+        val context = requireContext()
+
+        val container = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            background = ContextCompat.getDrawable(context, R.drawable.bg_dashboard_chip_card)
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+
+            layoutParams = LinearLayout.LayoutParams(
+                dp(140),
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                marginEnd = dp(12)
+            }
+        }
+
+        val tvTitle = TextView(context).apply {
+            text = title
+            textSize = 16f
+            setTextColor(ContextCompat.getColor(context, R.color.text_primary))
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+        }
+
+        val tvAvailable = TextView(context).apply {
+            text = "$available tersedia"
+            textSize = 14f
+            setTextColor(ContextCompat.getColor(context, R.color.status_tersedia_text))
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setPadding(0, dp(10), 0, 0)
+        }
+
+        val tvTotal = TextView(context).apply {
+            text = "Total unit: $total"
+            textSize = 12f
+            setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+            setPadding(0, dp(6), 0, 0)
+        }
+
+        container.addView(tvTitle)
+        container.addView(tvAvailable)
+        container.addView(tvTotal)
+
+        return container
+    }
+
+    private fun formatCurrency(amount: Double): String {
+        return NumberFormat.getCurrencyInstance(Locale("in", "ID")).format(amount)
+    }
+
+    private fun dp(value: Int): Int {
+        return (value * resources.displayMetrics.density).toInt()
     }
 
     private fun setLoading(isLoading: Boolean) {

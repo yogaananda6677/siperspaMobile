@@ -7,11 +7,11 @@ import android.os.Handler
 import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -19,7 +19,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.launch
 
@@ -28,22 +28,15 @@ class MonitoringFragment : Fragment() {
     private lateinit var rvMonitoring: RecyclerView
     private lateinit var progressBar: ProgressBar
     private lateinit var layoutEmpty: LinearLayout
+
     private lateinit var tvTotalPs: TextView
     private lateinit var tvTotalAktif: TextView
     private lateinit var tvTotalTersedia: TextView
     private lateinit var etSearch: EditText
 
-    private lateinit var filterSemuaTipe: TextView
-    private lateinit var filterPs3: TextView
-    private lateinit var filterPs4: TextView
-    private lateinit var filterPs5: TextView
-    private lateinit var filterVip: TextView
-
-    private lateinit var filterStatusSemua: TextView
-    private lateinit var filterStatusTersedia: TextView
-    private lateinit var filterStatusDipakai: TextView
-    private lateinit var filterStatusPunyaku: TextView
-    private lateinit var filterStatusBooking: TextView
+    private lateinit var chipTipeContainer: LinearLayout
+    private lateinit var chipStatusContainer: LinearLayout
+    private lateinit var scrollTipe: HorizontalScrollView
 
     private lateinit var adapter: MonitoringAdapter
     private var currentUserId: Int = 0
@@ -76,44 +69,10 @@ class MonitoringFragment : Fragment() {
         val prefs = requireContext().getSharedPreferences("app_session", Context.MODE_PRIVATE)
         currentUserId = prefs.getInt("id_user", 0)
 
-        rvMonitoring = view.findViewById(R.id.rvMonitoring)
-        progressBar = view.findViewById(R.id.progressBar)
-        layoutEmpty = view.findViewById(R.id.layoutEmpty)
-        tvTotalPs = view.findViewById(R.id.tvTotalPs)
-        tvTotalAktif = view.findViewById(R.id.tvTotalAktif)
-        tvTotalTersedia = view.findViewById(R.id.tvTotalTersedia)
-        etSearch = view.findViewById(R.id.etSearch)
-
-        filterSemuaTipe = view.findViewById(R.id.filterSemuaTipe)
-        filterPs3 = view.findViewById(R.id.filterPs3)
-        filterPs4 = view.findViewById(R.id.filterPs4)
-        filterPs5 = view.findViewById(R.id.filterPs5)
-        filterVip = view.findViewById(R.id.filterVip)
-
-        filterStatusSemua = view.findViewById(R.id.filterStatusSemua)
-        filterStatusTersedia = view.findViewById(R.id.filterStatusTersedia)
-        filterStatusDipakai = view.findViewById(R.id.filterStatusDipakai)
-        filterStatusPunyaku = view.findViewById(R.id.filterStatusPunyaku)
-        filterStatusBooking = view.findViewById(R.id.filterStatusBooking)
-
-        adapter = MonitoringAdapter(
-            currentUserId = currentUserId,
-            onAvailableClick = { item ->
-                openTransaksiPage(item)
-            },
-            onOwnedActiveClick = { item ->
-                openDetailTransaksiPage(item)
-            }
-        )
-
-        rvMonitoring.layoutManager = GridLayoutManager(requireContext(), 2)
-        rvMonitoring.adapter = adapter
-
+        bindViews(view)
+        setupRecyclerView()
         setupSearch()
-        setupFilters()
-        updateTipeFilterUI()
-        updateStatusFilterUI()
-
+        setupStatusFilters()
         fetchMonitoring()
     }
 
@@ -128,6 +87,32 @@ class MonitoringFragment : Fragment() {
         handler.removeCallbacks(timerRunnable)
     }
 
+    private fun bindViews(view: View) {
+        rvMonitoring = view.findViewById(R.id.rvMonitoring)
+        progressBar = view.findViewById(R.id.progressBar)
+        layoutEmpty = view.findViewById(R.id.layoutEmpty)
+
+        tvTotalPs = view.findViewById(R.id.tvTotalPs)
+        tvTotalAktif = view.findViewById(R.id.tvTotalAktif)
+        tvTotalTersedia = view.findViewById(R.id.tvTotalTersedia)
+        etSearch = view.findViewById(R.id.etSearch)
+
+        chipTipeContainer = view.findViewById(R.id.chipTipeContainer)
+        chipStatusContainer = view.findViewById(R.id.chipStatusContainer)
+        scrollTipe = view.findViewById(R.id.scrollTipe)
+    }
+
+    private fun setupRecyclerView() {
+        adapter = MonitoringAdapter(
+            currentUserId = currentUserId,
+            onAvailableClick = { item -> openTransaksiPage(item) },
+            onOwnedActiveClick = { item -> openDetailTransaksiPage(item) }
+        )
+
+        rvMonitoring.layoutManager = LinearLayoutManager(requireContext())
+        rvMonitoring.adapter = adapter
+    }
+
     private fun setupSearch() {
         etSearch.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
@@ -140,84 +125,101 @@ class MonitoringFragment : Fragment() {
         })
     }
 
-    private fun setupFilters() {
-        filterSemuaTipe.setOnClickListener {
-            selectedTipe = "SEMUA"
-            updateTipeFilterUI()
-            applyFilters()
-        }
-        filterPs3.setOnClickListener {
-            selectedTipe = "PS3"
-            updateTipeFilterUI()
-            applyFilters()
-        }
-        filterPs4.setOnClickListener {
-            selectedTipe = "PS4"
-            updateTipeFilterUI()
-            applyFilters()
-        }
-        filterPs5.setOnClickListener {
-            selectedTipe = "PS5"
-            updateTipeFilterUI()
-            applyFilters()
-        }
-        filterVip.setOnClickListener {
-            selectedTipe = "VIP"
-            updateTipeFilterUI()
-            applyFilters()
-        }
+    private fun setupStatusFilters() {
+        renderStatusChips()
+    }
 
-        filterStatusSemua.setOnClickListener {
-            selectedStatus = "SEMUA"
-            updateStatusFilterUI()
-            applyFilters()
-        }
-        filterStatusTersedia.setOnClickListener {
-            selectedStatus = "TERSEDIA"
-            updateStatusFilterUI()
-            applyFilters()
-        }
-        filterStatusDipakai.setOnClickListener {
-            selectedStatus = "DIPAKAI"
-            updateStatusFilterUI()
-            applyFilters()
-        }
-        filterStatusPunyaku.setOnClickListener {
-            selectedStatus = "PUNYAKU"
-            updateStatusFilterUI()
-            applyFilters()
-        }
-        filterStatusBooking.setOnClickListener {
-            selectedStatus = "BOOKING"
-            updateStatusFilterUI()
-            applyFilters()
+    private fun renderStatusChips() {
+        chipStatusContainer.removeAllViews()
+
+        val statuses = listOf(
+            "SEMUA" to "Semua",
+            "TERSEDIA" to "Tersedia",
+            "DIPAKAI" to "Dipakai",
+            "PUNYAKU" to "Punyaku",
+            "BOOKING" to "Booking",
+            "VALIDASI_CASH" to "Validasi Cash",
+            "MAINTENANCE" to "Maintenance"
+        )
+
+        statuses.forEach { (value, label) ->
+            chipStatusContainer.addView(
+                createChip(
+                    text = label,
+                    isSelected = selectedStatus == value
+                ) {
+                    selectedStatus = value
+                    renderStatusChips()
+                    applyFilters()
+                }
+            )
         }
     }
 
-    private fun updateTipeFilterUI() {
-        setChipState(filterSemuaTipe, selectedTipe == "SEMUA")
-        setChipState(filterPs3, selectedTipe == "PS3")
-        setChipState(filterPs4, selectedTipe == "PS4")
-        setChipState(filterPs5, selectedTipe == "PS5")
-        setChipState(filterVip, selectedTipe == "VIP")
+    private fun renderDynamicTipeChips(items: List<PsMonitoringItem>) {
+        chipTipeContainer.removeAllViews()
+
+        val tipeList = items.mapNotNull { it.tipe?.namaTipe?.trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .sortedBy { it.uppercase() }
+
+        chipTipeContainer.addView(
+            createChip(
+                text = "Semua Tipe",
+                isSelected = selectedTipe == "SEMUA"
+            ) {
+                selectedTipe = "SEMUA"
+                renderDynamicTipeChips(allItems)
+                applyFilters()
+            }
+        )
+
+        tipeList.forEach { tipeName ->
+            chipTipeContainer.addView(
+                createChip(
+                    text = tipeName,
+                    isSelected = selectedTipe.equals(tipeName, true)
+                ) {
+                    selectedTipe = tipeName
+                    renderDynamicTipeChips(allItems)
+                    applyFilters()
+                }
+            )
+        }
+
+        scrollTipe.visibility = View.VISIBLE
     }
 
-    private fun updateStatusFilterUI() {
-        setChipState(filterStatusSemua, selectedStatus == "SEMUA")
-        setChipState(filterStatusTersedia, selectedStatus == "TERSEDIA")
-        setChipState(filterStatusDipakai, selectedStatus == "DIPAKAI")
-        setChipState(filterStatusPunyaku, selectedStatus == "PUNYAKU")
-        setChipState(filterStatusBooking, selectedStatus == "BOOKING")
-    }
-
-    private fun setChipState(view: TextView, selected: Boolean) {
-        val ctx = requireContext()
-        if (selected) {
-            view.setBackgroundResource(R.drawable.bg_status_owned_active)
-            view.setTextColor(ContextCompat.getColor(ctx, R.color.status_owned_active_text))
-        } else {
-            view.setBackgroundResource(R.drawable.bg_form_card)
-            view.setTextColor(ContextCompat.getColor(ctx, R.color.text_secondary))
+    private fun createChip(
+        text: String,
+        isSelected: Boolean,
+        onClick: () -> Unit
+    ): TextView {
+        return TextView(requireContext()).apply {
+            this.text = text
+            textSize = 12f
+            setPadding(dp(14), dp(9), dp(14), dp(9))
+            background = ContextCompat.getDrawable(
+                context,
+                if (isSelected) R.drawable.bg_status_owned_active else R.drawable.bg_form_card
+            )
+            setTextColor(
+                ContextCompat.getColor(
+                    context,
+                    if (isSelected) R.color.status_owned_active_text else R.color.text_secondary
+                )
+            )
+            if (isSelected) {
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                marginEnd = dp(8)
+            }
+            setOnClickListener { onClick() }
         }
     }
 
@@ -228,40 +230,25 @@ class MonitoringFragment : Fragment() {
             try {
                 val response = RetrofitClient.apiService.getMonitoring()
 
-                Log.d("MONITORING", "CODE: ${response.code()}")
-
                 if (response.isSuccessful) {
                     val items = response.body()?.data ?: emptyList()
                     allItems = items
-
-                    items.forEach {
-                        Log.d(
-                            "MONITORING_DEBUG",
-                            "ps=${it.nomorPs}, statusPs=${it.statusPs}, " +
-                                    "statusTransaksi=${it.activeTransaksi?.statusTransaksi}, " +
-                                    "statusBayar=${it.activeTransaksi?.pembayaran?.statusBayar}, " +
-                                    "userId=${it.activeTransaksi?.user?.idUser}, currentUserId=$currentUserId"
-                        )
-                    }
-
+                    renderDynamicTipeChips(items)
+                    renderStatusChips()
                     applyFilters()
                 } else {
-                    val errorBody = response.errorBody()?.string()
                     Toast.makeText(
                         requireContext(),
                         "Gagal memuat data: ${response.code()}",
                         Toast.LENGTH_SHORT
                     ).show()
-                    Log.e("MONITORING", "ERROR: $errorBody")
                 }
-
             } catch (e: Exception) {
                 Toast.makeText(
                     requireContext(),
                     "Gagal terhubung ke server",
                     Toast.LENGTH_SHORT
                 ).show()
-                Log.e("MONITORING", "EXCEPTION", e)
             } finally {
                 setLoading(false)
             }
@@ -289,9 +276,19 @@ class MonitoringFragment : Fragment() {
         val keyword = currentSearch.lowercase()
         val nomor = item.nomorPs.lowercase()
         val tipe = item.tipe?.namaTipe?.lowercase().orEmpty()
-        val status = item.statusPs.lowercase()
+        val statusPs = item.statusPs.lowercase()
+        val user = item.activeTransaksi?.user?.name?.lowercase().orEmpty()
+        val username = item.activeTransaksi?.user?.username?.lowercase().orEmpty()
+        val statusTransaksi = item.activeTransaksi?.statusTransaksi?.lowercase().orEmpty()
+        val statusBayar = item.activeTransaksi?.pembayaran?.statusBayar?.lowercase().orEmpty()
 
-        return nomor.contains(keyword) || tipe.contains(keyword) || status.contains(keyword)
+        return nomor.contains(keyword) ||
+                tipe.contains(keyword) ||
+                statusPs.contains(keyword) ||
+                user.contains(keyword) ||
+                username.contains(keyword) ||
+                statusTransaksi.contains(keyword) ||
+                statusBayar.contains(keyword)
     }
 
     private fun matchesTipe(item: PsMonitoringItem): Boolean {
@@ -300,16 +297,20 @@ class MonitoringFragment : Fragment() {
     }
 
     private fun matchesStatus(item: PsMonitoringItem): Boolean {
+        val transaksi = item.activeTransaksi
+        val status = transaksi?.statusTransaksi
+        val statusBayar = transaksi?.pembayaran?.statusBayar
+
         return when (selectedStatus) {
             "TERSEDIA" -> isPsBisaDibooking(item)
             "DIPAKAI" -> isPsSedangDipakai(item)
             "PUNYAKU" -> isOwnedActive(item)
             "BOOKING" -> {
-                val status = item.activeTransaksi?.statusTransaksi
                 status.equals("waiting", true) ||
-                        status.equals("dijadwalkan", true) ||
-                        status.equals("menunggu_pembayaran", true)
+                        status.equals("dijadwalkan", true)
             }
+            "VALIDASI_CASH" -> statusBayar.equals("menunggu_validasi", true)
+            "MAINTENANCE" -> item.statusPs.equals("maintenance", true)
             else -> true
         }
     }
@@ -317,8 +318,7 @@ class MonitoringFragment : Fragment() {
     private fun isPsSedangDipakai(item: PsMonitoringItem): Boolean {
         val transaksiStatus = item.activeTransaksi?.statusTransaksi
         return item.statusPs.equals("digunakan", true) ||
-                transaksiStatus.equals("aktif", true) ||
-                transaksiStatus.equals("menunggu_pembayaran", true)
+                transaksiStatus.equals("aktif", true)
     }
 
     private fun isPsBisaDibooking(item: PsMonitoringItem): Boolean {
@@ -326,16 +326,14 @@ class MonitoringFragment : Fragment() {
         return item.statusPs.equals("tersedia", true) &&
                 !transaksiStatus.equals("dijadwalkan", true) &&
                 !transaksiStatus.equals("waiting", true) &&
-                !transaksiStatus.equals("aktif", true) &&
-                !transaksiStatus.equals("menunggu_pembayaran", true)
+                !transaksiStatus.equals("aktif", true)
     }
 
     private fun isOwnedActive(item: PsMonitoringItem): Boolean {
         val transaksi = item.activeTransaksi ?: return false
         val status = transaksi.statusTransaksi ?: return false
 
-        return (status.equals("aktif", true) ||
-                status.equals("menunggu_pembayaran", true)) &&
+        return status.equals("aktif", true) &&
                 transaksi.user?.idUser == currentUserId
     }
 
@@ -356,7 +354,6 @@ class MonitoringFragment : Fragment() {
         if (!isOwnedActive(item)) return
 
         val transaksi = item.activeTransaksi ?: return
-
         val intent = Intent(requireContext(), DetailTransaksiActivity::class.java).apply {
             putExtra("id_transaksi", transaksi.idTransaksi)
         }
@@ -369,5 +366,9 @@ class MonitoringFragment : Fragment() {
             rvMonitoring.visibility = View.GONE
             layoutEmpty.visibility = View.GONE
         }
+    }
+
+    private fun dp(value: Int): Int {
+        return (value * resources.displayMetrics.density).toInt()
     }
 }

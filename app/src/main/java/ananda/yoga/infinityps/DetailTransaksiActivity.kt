@@ -2,16 +2,16 @@ package ananda.yoga.infinityps
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -25,8 +25,10 @@ class DetailTransaksiActivity : AppCompatActivity() {
     private lateinit var tvStatusBayar: TextView
     private lateinit var tvTanggal: TextView
     private lateinit var tvTotal: TextView
-    private lateinit var tvSewa: TextView
-    private lateinit var tvProduk: TextView
+    private lateinit var tvInfoRingkas: TextView
+
+    private lateinit var tvDetailSewa: TextView
+    private lateinit var tvDetailProduk: TextView
 
     private lateinit var btnBayar: Button
     private lateinit var btnTambahWaktu: Button
@@ -36,13 +38,10 @@ class DetailTransaksiActivity : AppCompatActivity() {
     private lateinit var contentLayout: LinearLayout
     private lateinit var layoutActionButtons: LinearLayout
     private lateinit var layoutSecondaryActions: LinearLayout
+    private lateinit var btnBack: ImageView
 
     private var idTransaksi: Int = 0
     private var currentData: HistoryItem? = null
-
-    companion object {
-        private const val TAG = "DETAIL_TRANSAKSI"
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,13 +49,26 @@ class DetailTransaksiActivity : AppCompatActivity() {
 
         idTransaksi = intent.getIntExtra("id_transaksi", 0)
 
+        bindViews()
+        setupActions()
+        fetchDetail()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        fetchDetail()
+    }
+
+    private fun bindViews() {
         tvId = findViewById(R.id.tvIdTransaksi)
         tvStatusTransaksi = findViewById(R.id.tvStatusTransaksi)
         tvStatusBayar = findViewById(R.id.tvStatusBayar)
         tvTanggal = findViewById(R.id.tvTanggal)
         tvTotal = findViewById(R.id.tvTotal)
-        tvSewa = findViewById(R.id.tvDetailSewa)
-        tvProduk = findViewById(R.id.tvDetailProduk)
+        tvInfoRingkas = findViewById(R.id.tvInfoRingkas)
+
+        tvDetailSewa = findViewById(R.id.tvDetailSewa)
+        tvDetailProduk = findViewById(R.id.tvDetailProduk)
 
         btnBayar = findViewById(R.id.btnBayar)
         btnTambahWaktu = findViewById(R.id.btnTambahWaktu)
@@ -66,13 +78,24 @@ class DetailTransaksiActivity : AppCompatActivity() {
         contentLayout = findViewById(R.id.contentLayout)
         layoutActionButtons = findViewById(R.id.layoutActionButtons)
         layoutSecondaryActions = findViewById(R.id.layoutSecondaryActions)
+        btnBack = findViewById(R.id.btnBack)
+    }
+
+    private fun setupActions() {
+        btnBack.setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
 
         btnBayar.setOnClickListener {
             val data = currentData ?: return@setOnClickListener
-            val intent = Intent(this, PembayaranActivity::class.java)
-            intent.putExtra("id_transaksi", data.idTransaksi)
-            intent.putExtra("total_harga", data.totalHarga)
+            val intent = Intent(this, PembayaranActivity::class.java).apply {
+                putExtra("id_transaksi", data.idTransaksi)
+                putExtra("total_harga", data.totalHarga)
+            }
             startActivity(intent)
+
+
+
         }
 
         btnTambahWaktu.setOnClickListener {
@@ -81,14 +104,15 @@ class DetailTransaksiActivity : AppCompatActivity() {
             val psId = detailSewa?.idPs ?: 0
             val nomorPs = detailSewa?.playstation?.nomorPs ?: "-"
             val namaTipe = detailSewa?.playstation?.tipe?.namaTipe ?: "-"
-            val hargaSewa = 0L
+            val hargaSewa = detailSewa?.playstation?.tipe?.hargaSewa ?: 0L
 
-            val intent = Intent(this, TambahWaktuActivity::class.java)
-            intent.putExtra("id_transaksi", data.idTransaksi)
-            intent.putExtra("id_ps", psId)
-            intent.putExtra("nomor_ps", nomorPs)
-            intent.putExtra("nama_tipe", namaTipe)
-            intent.putExtra("harga_sewa", hargaSewa)
+            val intent = Intent(this, TambahWaktuActivity::class.java).apply {
+                putExtra("id_transaksi", data.idTransaksi)
+                putExtra("id_ps", psId)
+                putExtra("nomor_ps", nomorPs)
+                putExtra("nama_tipe", namaTipe)
+                putExtra("harga_sewa", hargaSewa)
+            }
             startActivity(intent)
         }
 
@@ -98,19 +122,13 @@ class DetailTransaksiActivity : AppCompatActivity() {
             val nomorPs = detailSewa?.playstation?.nomorPs ?: "-"
             val namaTipe = detailSewa?.playstation?.tipe?.namaTipe ?: "-"
 
-            val intent = Intent(this, TambahProdukActivity::class.java)
-            intent.putExtra("id_transaksi", data.idTransaksi)
-            intent.putExtra("nomor_ps", nomorPs)
-            intent.putExtra("nama_tipe", namaTipe)
+            val intent = Intent(this, TambahProdukActivity::class.java).apply {
+                putExtra("id_transaksi", data.idTransaksi)
+                putExtra("nomor_ps", nomorPs)
+                putExtra("nama_tipe", namaTipe)
+            }
             startActivity(intent)
         }
-
-        fetchDetail()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        fetchDetail()
     }
 
     private fun fetchDetail() {
@@ -127,9 +145,6 @@ class DetailTransaksiActivity : AppCompatActivity() {
                     idTransaksi
                 )
 
-                Log.d(TAG, "response code = ${response.code()}")
-                Log.d(TAG, "response message = ${response.message()}")
-
                 if (response.isSuccessful) {
                     val item = response.body()?.data
                     if (item != null) {
@@ -143,8 +158,6 @@ class DetailTransaksiActivity : AppCompatActivity() {
                         ).show()
                     }
                 } else {
-                    val errorBody = response.errorBody()?.string()
-                    Log.e(TAG, "errorBody = $errorBody")
                     Toast.makeText(
                         this@DetailTransaksiActivity,
                         "Gagal memuat detail: ${response.code()}",
@@ -152,7 +165,6 @@ class DetailTransaksiActivity : AppCompatActivity() {
                     ).show()
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "exception fetch detail", e)
                 Toast.makeText(
                     this@DetailTransaksiActivity,
                     "Gagal terhubung ke server: ${e.message}",
@@ -168,29 +180,54 @@ class DetailTransaksiActivity : AppCompatActivity() {
         val statusTransaksi = item.statusTransaksi.lowercase()
         val statusBayar = item.pembayaran?.statusBayar?.lowercase() ?: "menunggu"
 
-        tvId.text = "#${item.idTransaksi}"
+        tvId.text = "Transaksi #${item.idTransaksi}"
         tvTanggal.text = formatDate(item.tanggal)
         tvTotal.text = formatRupiah(item.totalHarga)
 
         setupStatusTransaksi(statusTransaksi)
         setupStatusBayar(statusBayar)
 
-        tvSewa.text = if (item.detailSewa.isEmpty()) {
-            "Tidak ada item sewa"
+        tvInfoRingkas.text = when {
+            statusBayar == "menunggu_validasi" ->
+                "Pembayaran sedang menunggu validasi admin."
+            statusTransaksi == "aktif" && statusBayar != "lunas" ->
+                "Transaksi masih berjalan dan belum lunas."
+            statusTransaksi == "selesai" ->
+                "Transaksi sudah selesai."
+            else ->
+                "Cek detail sewa dan produk di bawah."
+        }
+
+        tvDetailSewa.text = if (item.detailSewa.isEmpty()) {
+            "Belum ada item sewa."
         } else {
-            item.detailSewa.joinToString("\n") {
+            item.detailSewa.joinToString("\n\n") {
                 val namaPs = it.playstation?.nomorPs ?: "-"
                 val tipePs = it.playstation?.tipe?.namaTipe ?: "-"
                 val durasi = it.durasiMenit ?: 0
-                "$namaPs • $tipePs • $durasi menit"
+                val subtotal = it.subtotal ?: 0.0
+
+                "PS $namaPs\n" +
+                        "Tipe: $tipePs\n" +
+                        "Durasi: $durasi menit\n" +
+                        "Mulai: ${formatShortDateTime(it.jamMulai)}\n" +
+                        "Selesai: ${formatShortDateTime(it.jamSelesai)}\n" +
+                        "Subtotal: ${formatRupiah(subtotal)}"
             }
         }
 
-        tvProduk.text = if (item.detailProduk.isEmpty()) {
-            "Tidak ada produk"
+        tvDetailProduk.text = if (item.detailProduk.isEmpty()) {
+            "Belum ada produk tambahan."
         } else {
-            item.detailProduk.joinToString("\n") {
-                "${it.produk?.nama ?: "-"} x${it.qty}"
+            item.detailProduk.joinToString("\n\n") {
+                val namaProduk = it.produk?.nama ?: "-"
+                val harga = it.produk?.harga ?: 0L
+                val subtotal = it.subtotal ?: 0.0
+
+                "$namaProduk\n" +
+                        "Qty: ${it.qty}\n" +
+                        "Harga: ${formatRupiah(harga.toDouble())}\n" +
+                        "Subtotal: ${formatRupiah(subtotal)}"
             }
         }
 
@@ -208,13 +245,8 @@ class DetailTransaksiActivity : AppCompatActivity() {
         layoutActionButtons.visibility = if (bolehBayar || bolehUbah) View.VISIBLE else View.GONE
 
         btnBayar.visibility = if (bolehBayar) View.VISIBLE else View.GONE
-        btnBayar.isEnabled = bolehBayar
-
         btnTambahWaktu.visibility = if (bolehUbah) View.VISIBLE else View.GONE
-        btnTambahWaktu.isEnabled = bolehUbah
-
         btnTambahProduk.visibility = if (bolehUbah) View.VISIBLE else View.GONE
-        btnTambahProduk.isEnabled = bolehUbah
 
         layoutSecondaryActions.visibility =
             if (btnTambahWaktu.visibility == View.VISIBLE || btnTambahProduk.visibility == View.VISIBLE) {
@@ -228,35 +260,35 @@ class DetailTransaksiActivity : AppCompatActivity() {
         when (status) {
             "aktif" -> {
                 tvStatusTransaksi.text = "Sedang Berjalan"
-                setBadge(tvStatusTransaksi, "#DCC8FF", "#4B2A7B")
+                applyBadge(tvStatusTransaksi, R.drawable.bg_status_owned_active, R.color.status_owned_active_text)
             }
             "menunggu_pembayaran" -> {
                 tvStatusTransaksi.text = "Menunggu Pembayaran"
-                setBadge(tvStatusTransaksi, "#FFE7A8", "#6B4E00")
+                applyBadge(tvStatusTransaksi, R.drawable.bg_status_booking, R.color.status_booking_text)
             }
             "waiting" -> {
                 tvStatusTransaksi.text = "Menunggu Approval"
-                setBadge(tvStatusTransaksi, "#FFE7A8", "#6B4E00")
+                applyBadge(tvStatusTransaksi, R.drawable.bg_status_booking, R.color.status_booking_text)
             }
             "dijadwalkan" -> {
                 tvStatusTransaksi.text = "Dijadwalkan"
-                setBadge(tvStatusTransaksi, "#FFD8B0", "#7A3E00")
+                applyBadge(tvStatusTransaksi, R.drawable.bg_status_booking, R.color.status_booking_text)
             }
             "selesai" -> {
                 tvStatusTransaksi.text = "Selesai"
-                setBadge(tvStatusTransaksi, "#C7F9D4", "#14532D")
+                applyBadge(tvStatusTransaksi, R.drawable.bg_status_tersedia, R.color.status_tersedia_text)
             }
             "dibatalkan" -> {
                 tvStatusTransaksi.text = "Dibatalkan"
-                setBadge(tvStatusTransaksi, "#FFD1D1", "#7F1D1D")
+                applyBadge(tvStatusTransaksi, R.drawable.bg_status_danger, R.color.status_danger_text)
             }
             "ditolak" -> {
                 tvStatusTransaksi.text = "Ditolak"
-                setBadge(tvStatusTransaksi, "#F8D0D0", "#5B1720")
+                applyBadge(tvStatusTransaksi, R.drawable.bg_status_danger, R.color.status_danger_text)
             }
             else -> {
                 tvStatusTransaksi.text = status.replaceFirstChar { it.uppercase() }
-                setBadge(tvStatusTransaksi, "#E5E7EB", "#374151")
+                applyBadge(tvStatusTransaksi, R.drawable.bg_status_neutral, R.color.text_secondary)
             }
         }
     }
@@ -265,31 +297,30 @@ class DetailTransaksiActivity : AppCompatActivity() {
         when (status) {
             "lunas" -> {
                 tvStatusBayar.text = "Lunas"
-                setBadge(tvStatusBayar, "#C7F9D4", "#14532D")
+                applyBadge(tvStatusBayar, R.drawable.bg_status_tersedia, R.color.status_tersedia_text)
             }
             "gagal" -> {
                 tvStatusBayar.text = "Gagal"
-                setBadge(tvStatusBayar, "#FFD1D1", "#7F1D1D")
+                applyBadge(tvStatusBayar, R.drawable.bg_status_danger, R.color.status_danger_text)
             }
             "menunggu_validasi" -> {
                 tvStatusBayar.text = "Menunggu Validasi"
-                setBadge(tvStatusBayar, "#FDE68A", "#92400E")
+                applyBadge(tvStatusBayar, R.drawable.bg_status_booking, R.color.status_booking_text)
             }
             "menunggu" -> {
                 tvStatusBayar.text = "Menunggu"
-                setBadge(tvStatusBayar, "#FFE7A8", "#6B4E00")
+                applyBadge(tvStatusBayar, R.drawable.bg_status_booking, R.color.status_booking_text)
             }
             else -> {
                 tvStatusBayar.text = status.replaceFirstChar { it.uppercase() }
-                setBadge(tvStatusBayar, "#E5E7EB", "#374151")
+                applyBadge(tvStatusBayar, R.drawable.bg_status_neutral, R.color.text_secondary)
             }
         }
     }
 
-    private fun setBadge(textView: TextView, bgColor: String, textColor: String) {
-        textView.setBackgroundColor(Color.parseColor(bgColor))
-        textView.setTextColor(Color.parseColor(textColor))
-        textView.setPadding(24, 12, 24, 12)
+    private fun applyBadge(textView: TextView, backgroundRes: Int, textColorRes: Int) {
+        textView.setBackgroundResource(backgroundRes)
+        textView.setTextColor(ContextCompat.getColor(this, textColorRes))
     }
 
     private fun formatRupiah(value: Double): String {
@@ -303,8 +334,7 @@ class DetailTransaksiActivity : AppCompatActivity() {
                 SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()),
                 SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
             )
-
-            val output = SimpleDateFormat("dd MMM yyyy HH:mm", Locale("id", "ID"))
+            val output = SimpleDateFormat("dd MMM yyyy • HH:mm", Locale("id", "ID"))
 
             for (format in formats) {
                 try {
@@ -313,7 +343,29 @@ class DetailTransaksiActivity : AppCompatActivity() {
                 } catch (_: Exception) {
                 }
             }
+            value
+        } catch (_: Exception) {
+            value
+        }
+    }
 
+    private fun formatShortDateTime(value: String?): String {
+        if (value.isNullOrBlank()) return "-"
+        return try {
+            val formats = listOf(
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault()),
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()),
+                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            )
+            val output = SimpleDateFormat("dd MMM yyyy • HH:mm", Locale("id", "ID"))
+
+            for (format in formats) {
+                try {
+                    val parsed = format.parse(value)
+                    if (parsed != null) return output.format(parsed)
+                } catch (_: Exception) {
+                }
+            }
             value
         } catch (_: Exception) {
             value

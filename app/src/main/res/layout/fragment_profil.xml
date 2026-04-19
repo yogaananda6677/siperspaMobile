@@ -15,7 +15,6 @@
         android:paddingEnd="24dp"
         android:paddingBottom="40dp">
 
-        <!-- Page Header -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -34,7 +33,6 @@
             android:textColor="@color/text_secondary"
             android:textSize="14sp" />
 
-        <!-- Avatar Card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -83,7 +81,6 @@
                 android:textSize="14sp" />
         </LinearLayout>
 
-        <!-- Detail Card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -109,7 +106,6 @@
                 android:alpha="0.2"
                 android:background="@color/text_secondary" />
 
-            <!-- Email -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -142,7 +138,6 @@
                 android:alpha="0.2"
                 android:background="@color/text_secondary" />
 
-            <!-- Role + Badge -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -189,11 +184,27 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Logout Button -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:layout_marginTop="32dp">
+            android:layout_marginTop="24dp">
+
+            <Button
+                android:id="@+id/btnEditProfile"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_button_secondary"
+                android:fontFamily="sans-serif-medium"
+                android:text="Ubah Profil"
+                android:textAllCaps="false"
+                android:textColor="@color/primary"
+                android:textSize="16sp" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp">
 
             <Button
                 android:id="@+id/btnLogout"

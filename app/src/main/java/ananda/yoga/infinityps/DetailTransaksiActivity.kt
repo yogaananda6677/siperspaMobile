@@ -27,12 +27,15 @@ class DetailTransaksiActivity : AppCompatActivity() {
     private lateinit var tvTotal: TextView
     private lateinit var tvSewa: TextView
     private lateinit var tvProduk: TextView
+
     private lateinit var btnBayar: Button
     private lateinit var btnTambahWaktu: Button
     private lateinit var btnTambahProduk: Button
+
     private lateinit var progressBar: ProgressBar
     private lateinit var contentLayout: LinearLayout
     private lateinit var layoutActionButtons: LinearLayout
+    private lateinit var layoutSecondaryActions: LinearLayout
 
     private var idTransaksi: Int = 0
     private var currentData: HistoryItem? = null
@@ -54,12 +57,15 @@ class DetailTransaksiActivity : AppCompatActivity() {
         tvTotal = findViewById(R.id.tvTotal)
         tvSewa = findViewById(R.id.tvDetailSewa)
         tvProduk = findViewById(R.id.tvDetailProduk)
+
         btnBayar = findViewById(R.id.btnBayar)
         btnTambahWaktu = findViewById(R.id.btnTambahWaktu)
         btnTambahProduk = findViewById(R.id.btnTambahProduk)
+
         progressBar = findViewById(R.id.progressBar)
         contentLayout = findViewById(R.id.contentLayout)
         layoutActionButtons = findViewById(R.id.layoutActionButtons)
+        layoutSecondaryActions = findViewById(R.id.layoutSecondaryActions)
 
         btnBayar.setOnClickListener {
             val data = currentData ?: return@setOnClickListener
@@ -71,19 +77,31 @@ class DetailTransaksiActivity : AppCompatActivity() {
 
         btnTambahWaktu.setOnClickListener {
             val data = currentData ?: return@setOnClickListener
-            val psId = data.detailSewa.firstOrNull()?.idPs ?: 0
+            val detailSewa = data.detailSewa.firstOrNull()
+            val psId = detailSewa?.idPs ?: 0
+            val nomorPs = detailSewa?.playstation?.nomorPs ?: "-"
+            val namaTipe = detailSewa?.playstation?.tipe?.namaTipe ?: "-"
+            val hargaSewa = 0L
 
             val intent = Intent(this, TambahWaktuActivity::class.java)
             intent.putExtra("id_transaksi", data.idTransaksi)
             intent.putExtra("id_ps", psId)
+            intent.putExtra("nomor_ps", nomorPs)
+            intent.putExtra("nama_tipe", namaTipe)
+            intent.putExtra("harga_sewa", hargaSewa)
             startActivity(intent)
         }
 
         btnTambahProduk.setOnClickListener {
             val data = currentData ?: return@setOnClickListener
+            val detailSewa = data.detailSewa.firstOrNull()
+            val nomorPs = detailSewa?.playstation?.nomorPs ?: "-"
+            val namaTipe = detailSewa?.playstation?.tipe?.namaTipe ?: "-"
 
             val intent = Intent(this, TambahProdukActivity::class.java)
             intent.putExtra("id_transaksi", data.idTransaksi)
+            intent.putExtra("nomor_ps", nomorPs)
+            intent.putExtra("nama_tipe", namaTipe)
             startActivity(intent)
         }
 
@@ -182,14 +200,12 @@ class DetailTransaksiActivity : AppCompatActivity() {
 
         val bolehBayar = when (statusTransaksi) {
             "aktif", "menunggu_pembayaran" -> {
-                statusBayar != "lunas" &&
-                        statusBayar != "menunggu_validasi"
+                statusBayar != "lunas" && statusBayar != "menunggu_validasi"
             }
             else -> false
         }
 
-        layoutActionButtons.visibility =
-            if (bolehBayar || bolehUbah) View.VISIBLE else View.GONE
+        layoutActionButtons.visibility = if (bolehBayar || bolehUbah) View.VISIBLE else View.GONE
 
         btnBayar.visibility = if (bolehBayar) View.VISIBLE else View.GONE
         btnBayar.isEnabled = bolehBayar
@@ -199,6 +215,13 @@ class DetailTransaksiActivity : AppCompatActivity() {
 
         btnTambahProduk.visibility = if (bolehUbah) View.VISIBLE else View.GONE
         btnTambahProduk.isEnabled = bolehUbah
+
+        layoutSecondaryActions.visibility =
+            if (btnTambahWaktu.visibility == View.VISIBLE || btnTambahProduk.visibility == View.VISIBLE) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
     }
 
     private fun setupStatusTransaksi(status: String) {

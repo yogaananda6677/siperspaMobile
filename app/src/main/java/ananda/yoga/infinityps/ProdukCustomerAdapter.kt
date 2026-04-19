@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import java.util.Locale
 
 class ProdukCustomerAdapter(
     private val items: MutableList<CartProdukItem>,
@@ -33,7 +34,7 @@ class ProdukCustomerAdapter(
         val item = items[position]
 
         holder.tvNamaProduk.text = item.produk.nama
-        holder.tvHargaProduk.text = "Rp ${item.produk.harga}"
+        holder.tvHargaProduk.text = formatRupiah(item.produk.harga)
         holder.tvStockProduk.text = "stok: ${item.produk.stock}"
         holder.tvQtyProduk.text = item.qty.toString()
 
@@ -52,5 +53,9 @@ class ProdukCustomerAdapter(
                 onQtyChanged()
             }
         }
+    }
+
+    private fun formatRupiah(value: Long): String {
+        return "Rp " + "%,d".format(Locale("id", "ID"), value).replace(',', '.')
     }
 }

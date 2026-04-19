@@ -1,7 +1,6 @@
 package ananda.yoga.infinityps
 
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
@@ -29,7 +29,11 @@ class DashboardFragment : Fragment() {
     private lateinit var tvPsDipakai: TextView
     private lateinit var tvInfoUtama: TextView
 
-    private lateinit var cardBooking: LinearLayout
+    private lateinit var tvPs3Tersedia: TextView
+    private lateinit var tvPs4Tersedia: TextView
+    private lateinit var tvPs5Tersedia: TextView
+    private lateinit var tvVipTersedia: TextView
+
     private lateinit var cardMonitoring: LinearLayout
     private lateinit var cardRiwayat: LinearLayout
     private lateinit var cardProfil: LinearLayout
@@ -61,7 +65,11 @@ class DashboardFragment : Fragment() {
         tvPsDipakai = view.findViewById(R.id.tvPsDipakai)
         tvInfoUtama = view.findViewById(R.id.tvInfoUtama)
 
-        cardBooking = view.findViewById(R.id.cardBooking)
+        tvPs3Tersedia = view.findViewById(R.id.tvPs3Tersedia)
+        tvPs4Tersedia = view.findViewById(R.id.tvPs4Tersedia)
+        tvPs5Tersedia = view.findViewById(R.id.tvPs5Tersedia)
+        tvVipTersedia = view.findViewById(R.id.tvVipTersedia)
+
         cardMonitoring = view.findViewById(R.id.cardMonitoring)
         cardRiwayat = view.findViewById(R.id.cardRiwayat)
         cardProfil = view.findViewById(R.id.cardProfil)
@@ -88,22 +96,18 @@ class DashboardFragment : Fragment() {
     }
 
     private fun setupQuickMenu() {
-        cardBooking.setOnClickListener {
-            Toast.makeText(requireContext(), "Silakan pilih PS dari Monitoring", Toast.LENGTH_SHORT).show()
-        }
-
         cardMonitoring.setOnClickListener {
-            (activity as? MainActivity)?.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavigationView)
-                ?.selectedItemId = R.id.itemHome
-        }
-
-        cardRiwayat.setOnClickListener {
-            (activity as? MainActivity)?.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavigationView)
+            activity?.findViewById<BottomNavigationView>(R.id.bottomNavigationView)
                 ?.selectedItemId = R.id.monitoring
         }
 
+        cardRiwayat.setOnClickListener {
+            activity?.findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+                ?.selectedItemId = R.id.riwayat
+        }
+
         cardProfil.setOnClickListener {
-            (activity as? MainActivity)?.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavigationView)
+            activity?.findViewById<BottomNavigationView>(R.id.bottomNavigationView)
                 ?.selectedItemId = R.id.profil
         }
     }
@@ -188,30 +192,52 @@ class DashboardFragment : Fragment() {
             transaksiAktif != null ->
                 "Kamu masih punya transaksi yang sedang berjalan."
             total == 0 ->
-                "Belum ada transaksi. Yuk mulai booking PS."
+                "Belum ada transaksi. Yuk cek PS yang tersedia."
             else ->
                 "Semua aktivitasmu terlihat normal hari ini."
         }
     }
 
     private fun bindMonitoringInfo(items: List<PsMonitoringItem>) {
-        val tersedia = items.count {
-            val status = it.activeTransaksi?.statusTransaksi
-            it.statusPs.equals("tersedia", true) &&
-                    !status.equals("aktif", true) &&
-                    !status.equals("waiting", true) &&
-                    !status.equals("dijadwalkan", true) &&
-                    !status.equals("menunggu_pembayaran", true)
+        fun isTersedia(item: PsMonitoringItem): Boolean {
+            val statusTransaksi = item.activeTransaksi?.statusTransaksi
+            return item.statusPs.equals("tersedia", true) &&
+                    !statusTransaksi.equals("aktif", true) &&
+                    !statusTransaksi.equals("waiting", true) &&
+                    !statusTransaksi.equals("dijadwalkan", true) &&
+                    !statusTransaksi.equals("menunggu_pembayaran", true)
         }
 
+        val tersedia = items.count { isTersedia(it) }
         val dipakai = items.count {
             it.statusPs.equals("digunakan", true) ||
                     it.activeTransaksi?.statusTransaksi.equals("aktif", true) ||
                     it.activeTransaksi?.statusTransaksi.equals("menunggu_pembayaran", true)
         }
 
+        val ps3Tersedia = items.count {
+            isTersedia(it) && it.tipe?.namaTipe.equals("PS3", true)
+        }
+
+        val ps4Tersedia = items.count {
+            isTersedia(it) && it.tipe?.namaTipe.equals("PS4", true)
+        }
+
+        val ps5Tersedia = items.count {
+            isTersedia(it) && it.tipe?.namaTipe.equals("PS5", true)
+        }
+
+        val vipTersedia = items.count {
+            isTersedia(it) && it.tipe?.namaTipe.equals("VIP", true)
+        }
+
         tvPsTersedia.text = tersedia.toString()
         tvPsDipakai.text = dipakai.toString()
+
+        tvPs3Tersedia.text = "$ps3Tersedia tersedia"
+        tvPs4Tersedia.text = "$ps4Tersedia tersedia"
+        tvPs5Tersedia.text = "$ps5Tersedia tersedia"
+        tvVipTersedia.text = "$vipTersedia tersedia"
     }
 
     private fun setLoading(isLoading: Boolean) {

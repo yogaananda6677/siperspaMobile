@@ -1,5 +1,7 @@
 package ananda.yoga.infinityps
 
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -61,13 +63,54 @@ class HistoryAdapter(
         }
 
         holder.tvDate.text = formatDate(item.tanggal)
-        holder.tvStatusTransaksi.text = formatStatusTransaksi(item.statusTransaksi)
-        holder.tvStatusBayar.text = formatStatusBayar(item.pembayaran?.statusBayar)
+
+        val statusTransaksiText = formatStatusTransaksi(item.statusTransaksi)
+        val statusBayarText = formatStatusBayar(item.pembayaran?.statusBayar)
+
+        holder.tvStatusTransaksi.text = statusTransaksiText
+        holder.tvStatusBayar.text = statusBayarText
+
+        applyStatusTransaksiStyle(holder.tvStatusTransaksi, item.statusTransaksi)
+        applyStatusBayarStyle(holder.tvStatusBayar, item.pembayaran?.statusBayar)
+
         holder.tvTotal.text = formatRupiah(item.totalHarga)
 
         holder.cardRoot.setOnClickListener {
             onClick(item)
         }
+    }
+
+    private fun applyStatusTransaksiStyle(textView: TextView, status: String) {
+        when (status.lowercase()) {
+            "aktif" -> setBadge(textView, "#EDE9FE", "#6D28D9")
+            "menunggu_pembayaran" -> setBadge(textView, "#FEF3C7", "#B45309")
+            "waiting" -> setBadge(textView, "#FEF3C7", "#B45309")
+            "dijadwalkan" -> setBadge(textView, "#FFE4D6", "#C2410C")
+            "selesai" -> setBadge(textView, "#DCFCE7", "#15803D")
+            "dibatalkan", "ditolak" -> setBadge(textView, "#FEE2E2", "#B91C1C")
+            else -> setBadge(textView, "#E5E7EB", "#374151")
+        }
+    }
+
+    private fun applyStatusBayarStyle(textView: TextView, status: String?) {
+        when ((status ?: "menunggu").lowercase()) {
+            "lunas" -> setBadge(textView, "#FEF3C7", "#B45309")
+            "menunggu_validasi" -> setBadge(textView, "#FEF3C7", "#B45309")
+            "menunggu" -> setBadge(textView, "#FEF3C7", "#B45309")
+            "gagal" -> setBadge(textView, "#FEE2E2", "#B91C1C")
+            else -> setBadge(textView, "#E5E7EB", "#374151")
+        }
+    }
+
+    private fun setBadge(textView: TextView, bgColor: String, textColor: String) {
+        val drawable = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = 24f
+            setColor(Color.parseColor(bgColor))
+        }
+        textView.background = drawable
+        textView.setTextColor(Color.parseColor(textColor))
+        textView.setPadding(20, 10, 20, 10)
     }
 
     private fun formatStatusTransaksi(value: String): String {

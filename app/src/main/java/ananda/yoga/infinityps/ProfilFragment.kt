@@ -20,6 +20,7 @@ class ProfilFragment : Fragment() {
     private lateinit var tvUsername: TextView
     private lateinit var tvEmailValue: TextView
     private lateinit var tvRoleValue: TextView
+    private lateinit var btnEditProfile: Button
     private lateinit var btnLogout: Button
 
     override fun onCreateView(
@@ -36,27 +37,36 @@ class ProfilFragment : Fragment() {
             "app_session", android.content.Context.MODE_PRIVATE
         )
 
-        tvInitial    = view.findViewById(R.id.tvInitial)
-        tvName       = view.findViewById(R.id.tvName)
-        tvUsername   = view.findViewById(R.id.tvUsername)
+        tvInitial = view.findViewById(R.id.tvInitial)
+        tvName = view.findViewById(R.id.tvName)
+        tvUsername = view.findViewById(R.id.tvUsername)
         tvEmailValue = view.findViewById(R.id.tvEmailValue)
-        tvRoleValue  = view.findViewById(R.id.tvRoleValue)
-        btnLogout    = view.findViewById(R.id.btnLogout)
+        tvRoleValue = view.findViewById(R.id.tvRoleValue)
+        btnEditProfile = view.findViewById(R.id.btnEditProfile)
+        btnLogout = view.findViewById(R.id.btnLogout)
 
         loadUserData()
+
+        btnEditProfile.setOnClickListener {
+            startActivity(Intent(requireContext(), EditProfilActivity::class.java))
+        }
 
         btnLogout.setOnClickListener {
             showLogoutDialog()
         }
     }
 
-    private fun loadUserData() {
-        val name     = preferences.getString("user_name", "-") ?: "-"
-        val username = preferences.getString("user_username", "-") ?: "-"
-        val email    = preferences.getString("user_email", "-") ?: "-"
-        val role     = preferences.getString("user_role", "-") ?: "-"
+    override fun onResume() {
+        super.onResume()
+        loadUserData()
+    }
 
-        // Ambil inisial dari nama (maks 2 huruf), misal "Ananda Yoga" → "AY"
+    private fun loadUserData() {
+        val name = preferences.getString("user_name", "-") ?: "-"
+        val username = preferences.getString("user_username", "-") ?: "-"
+        val email = preferences.getString("user_email", "-") ?: "-"
+        val role = preferences.getString("user_role", "-") ?: "-"
+
         val initial = name
             .trim()
             .split(" ")
@@ -64,11 +74,11 @@ class ProfilFragment : Fragment() {
             .take(2)
             .joinToString("") { it.first().uppercaseChar().toString() }
 
-        tvInitial.text    = initial.ifEmpty { "?" }
-        tvName.text       = name
-        tvUsername.text   = "@$username"
+        tvInitial.text = initial.ifEmpty { "?" }
+        tvName.text = name
+        tvUsername.text = "@$username"
         tvEmailValue.text = email
-        tvRoleValue.text  = role.replaceFirstChar { it.uppercaseChar() }
+        tvRoleValue.text = role.replaceFirstChar { it.uppercaseChar() }
     }
 
     private fun showLogoutDialog() {
@@ -83,7 +93,6 @@ class ProfilFragment : Fragment() {
     private fun doLogout() {
         preferences.edit().clear().apply()
 
-        // Arahkan ke activity pertama app kamu (Landing/Splash/Login)
         val intent = Intent(requireActivity(), LoginActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)

@@ -10,13 +10,13 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.RadioGroup
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -44,7 +44,10 @@ class TransaksiActivity : AppCompatActivity() {
     private lateinit var btnHitungProduk: Button
     private lateinit var tvSubtotalProduk: TextView
 
+    private lateinit var tvSubtotalSewaRincian: TextView
+    private lateinit var tvSubtotalProdukRincian: TextView
     private lateinit var tvGrandTotal: TextView
+
     private lateinit var btnSimpan: Button
     private lateinit var progressBar: ProgressBar
 
@@ -99,7 +102,10 @@ class TransaksiActivity : AppCompatActivity() {
         btnHitungProduk = findViewById(R.id.btnHitungProduk)
         tvSubtotalProduk = findViewById(R.id.tvSubtotalProduk)
 
+        tvSubtotalSewaRincian = findViewById(R.id.tvSubtotalSewaRincian)
+        tvSubtotalProdukRincian = findViewById(R.id.tvSubtotalProdukRincian)
         tvGrandTotal = findViewById(R.id.tvGrandTotal)
+
         btnSimpan = findViewById(R.id.btnSimpanTransaksi)
         progressBar = findViewById(R.id.progressBarTransaksi)
     }
@@ -122,8 +128,9 @@ class TransaksiActivity : AppCompatActivity() {
 
     private fun setupSpinner() {
         val durasiList = listOf("30 menit", "60 menit", "90 menit", "120 menit", "180 menit")
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, durasiList)
-        spinnerDurasi.adapter = adapter
+        val spinnerAdapter =
+            ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, durasiList)
+        spinnerDurasi.adapter = spinnerAdapter
     }
 
     private fun setupBookingMode() {
@@ -216,6 +223,7 @@ class TransaksiActivity : AppCompatActivity() {
     private fun setupActions() {
         btnHitungSewa.setOnClickListener {
             hitungSewa()
+            Toast.makeText(this, "Subtotal sewa diperbarui", Toast.LENGTH_SHORT).show()
         }
 
         btnHitungProduk.setOnClickListener {
@@ -237,14 +245,18 @@ class TransaksiActivity : AppCompatActivity() {
 
                 val response = RetrofitClient.apiService.getProduk("Bearer $token")
                 if (response.isSuccessful) {
-                    val data = response.body()?.data ?: emptyList()
+                    val data: List<CustomerProduk> = response.body()?.data ?: emptyList()
                     produkItems.clear()
                     produkItems.addAll(data.map { CartProdukItem(it, 0) })
                     produkAdapter.notifyDataSetChanged()
                     updateSubtotalProduk()
                     updateGrandTotal()
                 } else {
-                    Toast.makeText(this@TransaksiActivity, "Gagal memuat produk", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@TransaksiActivity,
+                        "Gagal memuat produk",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             } catch (e: Exception) {
                 Toast.makeText(
@@ -271,6 +283,7 @@ class TransaksiActivity : AppCompatActivity() {
 
         tvJamSelesai.text = sdf.format(selesai)
         tvSubtotalSewa.text = formatRupiah(subtotalSewa)
+        tvSubtotalSewaRincian.text = formatRupiah(subtotalSewa)
 
         updateGrandTotal()
     }
@@ -278,6 +291,7 @@ class TransaksiActivity : AppCompatActivity() {
     private fun updateSubtotalProduk() {
         subtotalProduk = produkItems.sumOf { it.produk.harga * it.qty }
         tvSubtotalProduk.text = formatRupiah(subtotalProduk)
+        tvSubtotalProdukRincian.text = formatRupiah(subtotalProduk)
     }
 
     private fun updateGrandTotal() {
@@ -356,20 +370,13 @@ class TransaksiActivity : AppCompatActivity() {
                 )
 
                 if (response.isSuccessful) {
-                    val body = response.body()
-                    Log.d("BOOKING", "SUCCESS=$body")
-
                     val msg = if (bookingMode == "sekarang") {
                         "Booking sekarang berhasil dibuat."
                     } else {
                         "Booking untuk nanti berhasil dibuat."
                     }
 
-                    Toast.makeText(
-                        this@TransaksiActivity,
-                        msg,
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(this@TransaksiActivity, msg, Toast.LENGTH_LONG).show()
                     finish()
                 } else {
                     val errorBody = response.errorBody()?.string()

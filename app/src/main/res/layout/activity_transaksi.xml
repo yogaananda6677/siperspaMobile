@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F3F6FB"
+    android:background="#F4F6FB"
     android:fillViewport="true">
 
     <LinearLayout
@@ -17,27 +17,35 @@
             android:layout_height="wrap_content"
             android:text="Transaksi PS"
             android:textColor="#111827"
-            android:textSize="22sp"
+            android:textSize="24sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Atur waktu sewa, tambah produk, lalu cek ringkasan sebelum simpan"
+            android:textColor="#6B7280"
+            android:textSize="13sp" />
 
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="18dp"
             android:layout_marginBottom="12dp"
-            app:cardCornerRadius="18dp"
+            app:cardCornerRadius="20dp"
             app:cardElevation="4dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="18dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Playstation Terpilih"
+                    android:text="PlayStation Terpilih"
                     android:textColor="#6B7280"
                     android:textSize="12sp" />
 
@@ -46,7 +54,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:text="A002"
+                    android:text="PS-03"
                     android:textColor="#111827"
                     android:textSize="32sp"
                     android:textStyle="bold" />
@@ -55,18 +63,19 @@
                     android:id="@+id/tvNamaTipe"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="PS 3-VIP"
-                    android:textColor="#111827"
+                    android:layout_marginTop="2dp"
+                    android:text="PS-1"
+                    android:textColor="#4B5563"
                     android:textSize="14sp" />
 
                 <TextView
                     android:id="@+id/tvHargaPerJam"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Rp 5000/jam"
+                    android:layout_marginTop="10dp"
+                    android:text="Rp 5.000/jam"
                     android:textColor="#2563EB"
-                    android:textSize="14sp"
+                    android:textSize="15sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -75,27 +84,27 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            app:cardCornerRadius="18dp"
+            app:cardCornerRadius="20dp"
             app:cardElevation="4dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="18dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Detail Sewa PS"
                     android:textColor="#111827"
-                    android:textSize="16sp"
+                    android:textSize="17sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="10dp"
                     android:text="Pilih waktu booking"
                     android:textColor="#6B7280"
                     android:textSize="12sp" />
@@ -118,7 +127,7 @@
                         android:id="@+id/rbBookingNanti"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
+                        android:layout_marginStart="18dp"
                         android:text="Nanti"
                         android:textColor="#111827" />
                 </RadioGroup>
@@ -126,7 +135,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="14dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
@@ -135,7 +144,8 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Jam mulai"
-                        android:textColor="#6B7280" />
+                        android:textColor="#6B7280"
+                        android:textSize="13sp" />
 
                     <TextView
                         android:id="@+id/tvJamMulai"
@@ -149,7 +159,7 @@
                 <Button
                     android:id="@+id/btnPilihJam"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:layout_marginTop="12dp"
                     android:backgroundTint="#0EA5E9"
                     android:text="Pilih Jam Booking"
@@ -161,22 +171,28 @@
                     android:id="@+id/spinnerDurasi"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp" />
+                    android:layout_marginTop="14dp" />
 
                 <Button
                     android:id="@+id/btnHitungSewa"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="14dp"
                     android:backgroundTint="#2563EB"
                     android:text="Hitung Sewa"
                     android:textAllCaps="false"
                     android:textColor="#FFFFFF" />
 
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="12dp"
+                    android:background="#E5E7EB" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
                     android:orientation="horizontal">
 
                     <TextView
@@ -198,7 +214,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="8dp"
                     android:orientation="horizontal">
 
                     <TextView
@@ -223,21 +239,21 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            app:cardCornerRadius="18dp"
+            app:cardCornerRadius="20dp"
             app:cardElevation="4dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="18dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Tambah Produk"
                     android:textColor="#111827"
-                    android:textSize="16sp"
+                    android:textSize="17sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -258,10 +274,10 @@
                 <Button
                     android:id="@+id/btnHitungProduk"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="14dp"
                     android:backgroundTint="#7C3AED"
-                    android:text="Hitung Produk"
+                    android:text="Perbarui Produk"
                     android:textAllCaps="false"
                     android:textColor="#FFFFFF" />
 
@@ -292,21 +308,21 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="18dp"
+            app:cardCornerRadius="20dp"
             app:cardElevation="4dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="18dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Ringkasan Transaksi"
+                    android:text="Rincian Pembelian"
                     android:textColor="#111827"
-                    android:textSize="16sp"
+                    android:textSize="17sp"
                     android:textStyle="bold" />
 
                 <LinearLayout
@@ -319,8 +335,59 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Total semua"
+                        android:text="Sewa PS"
                         android:textColor="#6B7280" />
+
+                    <TextView
+                        android:id="@+id/tvSubtotalSewaRincian"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Rp 0"
+                        android:textColor="#111827"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Produk tambahan"
+                        android:textColor="#6B7280" />
+
+                    <TextView
+                        android:id="@+id/tvSubtotalProdukRincian"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Rp 0"
+                        android:textColor="#111827"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="12dp"
+                    android:background="#E5E7EB" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Total semua"
+                        android:textColor="#111827"
+                        android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/tvGrandTotal"
@@ -328,7 +395,7 @@
                         android:layout_height="wrap_content"
                         android:text="Rp 0"
                         android:textColor="#2563EB"
-                        android:textSize="18sp"
+                        android:textSize="19sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -337,14 +404,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="14dp"
+                    android:layout_marginTop="16dp"
                     android:visibility="gone" />
 
                 <Button
                     android:id="@+id/btnSimpanTransaksi"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="16dp"
                     android:backgroundTint="#2563EB"
                     android:text="Simpan Transaksi"
                     android:textAllCaps="false"

@@ -6,6 +6,7 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface ApiService {
@@ -20,6 +21,13 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Header("Accept") accept: String = "application/json"
     ): Response<UserResponse>
+
+    @PUT("profile")
+    suspend fun updateProfile(
+        @Header("Authorization") token: String,
+        @Header("Accept") accept: String = "application/json",
+        @Body request: UpdateProfileRequest
+    ): Response<UpdateProfileResponse>
 
     @POST("logout")
     suspend fun logout(
@@ -69,7 +77,6 @@ interface ApiService {
         @Body request: BayarRequest
     ): Response<BayarResponse>
 
-
     @PATCH("transaksi/{id}/tambah-waktu")
     suspend fun tambahWaktu(
         @Header("Authorization") token: String,
@@ -85,5 +92,4 @@ interface ApiService {
         @Path("id") id: Int,
         @Body request: TambahProdukRequest
     ): Response<DetailHistoryResponse>
-    
 }

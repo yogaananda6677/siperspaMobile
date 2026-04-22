@@ -29,6 +29,13 @@ interface ApiService {
         @Body request: UpdateProfileRequest
     ): Response<UpdateProfileResponse>
 
+    @PUT("user/password")
+    suspend fun updatePassword(
+        @Header("Authorization") authorization: String,
+        @Header("Accept") accept: String = "application/json",
+        @Body request: ChangePasswordRequest
+    ): Response<ChangePasswordResponse>
+
     @POST("logout")
     suspend fun logout(
         @Header("Authorization") token: String,
@@ -41,8 +48,10 @@ interface ApiService {
     ): Response<RegisterResponse>
 
     @GET("monitoring/pelanggan")
-    suspend fun getMonitoring(): Response<MonitoringResponse>
-
+    suspend fun getMonitoring(
+        @Header("Authorization") token: String,
+        @Header("Accept") accept: String = "application/json"
+    ): Response<MonitoringResponse>
     @GET("produk")
     suspend fun getProduk(
         @Header("Authorization") token: String,

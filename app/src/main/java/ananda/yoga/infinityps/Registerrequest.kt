@@ -8,7 +8,7 @@ data class RegisterRequest(
     val email: String,
     val password: String,
     val password_confirmation: String,
-    val role: String = "pelanggan" // dikirim diam-diam, user tidak tahu
+    val role: String = "pelanggan"
 )
 
 data class RegisterResponse(

@@ -21,6 +21,7 @@ class ProfilFragment : Fragment() {
     private lateinit var tvEmailValue: TextView
     private lateinit var tvRoleValue: TextView
     private lateinit var btnEditProfile: Button
+    private lateinit var btnChangePassword: Button
     private lateinit var btnLogout: Button
 
     override fun onCreateView(
@@ -55,12 +56,17 @@ class ProfilFragment : Fragment() {
         tvEmailValue = view.findViewById(R.id.tvEmailValue)
         tvRoleValue = view.findViewById(R.id.tvRoleValue)
         btnEditProfile = view.findViewById(R.id.btnEditProfile)
+        btnChangePassword = view.findViewById(R.id.btnChangePassword)
         btnLogout = view.findViewById(R.id.btnLogout)
     }
 
     private fun setupActions() {
         btnEditProfile.setOnClickListener {
             startActivity(Intent(requireContext(), EditProfilActivity::class.java))
+        }
+
+        btnChangePassword.setOnClickListener {
+            startActivity(Intent(requireContext(), ChangePasswordActivity::class.java))
         }
 
         btnLogout.setOnClickListener {

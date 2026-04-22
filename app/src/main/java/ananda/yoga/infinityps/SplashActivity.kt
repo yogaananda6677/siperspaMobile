@@ -94,10 +94,8 @@ class SplashActivity : AppCompatActivity() {
                 val response = RetrofitClient.apiService.getMe("Bearer $token")
 
                 if (response.isSuccessful && response.body() != null) {
-                    // ✅ Valid → ke main
                     startActivity(Intent(this@SplashActivity, MainActivity::class.java))
                 } else {
-                    // ❌ Token invalid
                     clearSession()
                     startActivity(Intent(this@SplashActivity, WelcomeActivity::class.java))
                 }
@@ -105,18 +103,17 @@ class SplashActivity : AppCompatActivity() {
                 finish()
 
             } catch (e: Exception) {
-                // ❌ Server tidak bisa diakses (192.168.1.8 error)
                 showErrorState(
                     "Gagal terhubung ke server.\n" +
+                            "${e.javaClass.simpleName}: ${e.message}\n\n" +
                             "Pastikan:\n" +
                             "- Server aktif\n" +
                             "- Satu jaringan WiFi\n" +
-                            "- IP benar (192.168.1.8)"
+                            "- IP benar (192.168.1.32)"
                 )
             }
         }
     }
-
     // =========================
     // INTERNET CHECK
     // =========================

@@ -133,8 +133,7 @@ class DashboardFragment : Fragment() {
                 }
 
                 val monitoringDeferred = async {
-                    RetrofitClient.apiService.getMonitoring()
-                }
+                    RetrofitClient.apiService.getMonitoring("Bearer $token")                }
 
                 val transaksiResponse = transaksiDeferred.await()
                 val monitoringResponse = monitoringDeferred.await()

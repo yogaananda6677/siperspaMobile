@@ -228,7 +228,10 @@ class MonitoringFragment : Fragment() {
 
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.apiService.getMonitoring()
+                val prefs = requireContext().getSharedPreferences("app_session", Context.MODE_PRIVATE)
+                val token = prefs.getString("token", "") ?: ""
+
+                val response = RetrofitClient.apiService.getMonitoring("Bearer \$token")
 
                 if (response.isSuccessful) {
                     val items = response.body()?.data ?: emptyList()

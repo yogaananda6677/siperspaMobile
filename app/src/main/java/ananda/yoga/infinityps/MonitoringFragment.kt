@@ -263,14 +263,25 @@ class MonitoringFragment : Fragment() {
             matchesSearch(item) && matchesTipe(item) && matchesStatus(item)
         }
 
-        adapter.submitList(filtered)
+        val sorted = filtered.sortedWith(
+            compareByDescending<PsMonitoringItem> { isApprovedBooking(it) }
+                .thenByDescending { isOwnedActive(it) }
+                .thenByDescending { isPsSedangDipakai(it) }
+                .thenBy { item -> item.nomorPs }
+        )
+
+        adapter.submitList(sorted)
 
         tvTotalPs.text = allItems.size.toString()
         tvTotalAktif.text = allItems.count { isPsSedangDipakai(it) }.toString()
         tvTotalTersedia.text = allItems.count { isPsBisaDibooking(it) }.toString()
 
-        layoutEmpty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
-        rvMonitoring.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
+        layoutEmpty.visibility = if (sorted.isEmpty()) View.VISIBLE else View.GONE
+        rvMonitoring.visibility = if (sorted.isEmpty()) View.GONE else View.VISIBLE
+    }
+
+    private fun isApprovedBooking(item: PsMonitoringItem): Boolean {
+        return item.activeTransaksi?.statusTransaksi?.equals("dijadwalkan", true) == true
     }
 
     private fun matchesSearch(item: PsMonitoringItem): Boolean {

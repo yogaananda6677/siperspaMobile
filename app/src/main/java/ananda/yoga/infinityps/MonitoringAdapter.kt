@@ -100,7 +100,6 @@ class MonitoringAdapter(
                 holder.tvJamMulai.text = "Mulai ${formatJam(sewa?.jamMulai)}"
                 holder.tvDurasi.text = "Sudah dibooking"
             }
-
             statusBayar == "menunggu_validasi" -> {
                 holder.tvStatus.text = "Menunggu Validasi"
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_booking)

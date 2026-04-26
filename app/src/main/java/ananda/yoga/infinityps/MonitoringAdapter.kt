@@ -156,7 +156,6 @@ class MonitoringAdapter(
                 holder.tvJamMulai.text = "Mulai ${formatJam(sewa?.jamMulai)}"
                 holder.tvDurasi.text = "Sudah dibooking"
             }
-
             statusBayar == "menunggu_validasi" -> {
                 holder.layoutAktif.visibility = View.VISIBLE
                 holder.tvStatus.text = if (isCurrentUser) "Validasi Cash" else "Dipakai"

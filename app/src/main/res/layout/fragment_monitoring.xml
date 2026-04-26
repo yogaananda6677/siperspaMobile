@@ -45,7 +45,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:background="@android:color/transparent"
-                    android:hint="Cari nomor PS, tipe, status, atau user"
+                    android:hint="Cari PS, tipe, status, atau nama pelanggan"
                     android:imeOptions="actionDone"
                     android:inputType="text"
                     android:paddingStart="10dp"
@@ -69,7 +69,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Pantau ketersediaan, status pemakaian, dan booking secara real-time."
+                android:text="Pantau ketersediaan unit dan cek booking yang sudah disetujui lebih cepat."
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
 
@@ -228,7 +228,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Tidak ada unit yang cocok"
+                android:text="Belum ada data PlayStation"
                 android:textColor="@color/text_secondary"
                 android:textSize="15sp"
                 android:textStyle="bold" />
@@ -237,7 +237,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="Coba ubah kata kunci atau filter"
+                android:text="Coba refresh atau periksa filter yang sedang aktif"
                 android:textColor="@color/text_hint"
                 android:textSize="12sp" />
         </LinearLayout>

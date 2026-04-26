@@ -1,6 +1,7 @@
 package ananda.yoga.infinityps
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -13,7 +14,6 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -29,20 +29,20 @@ class DashboardFragment : Fragment() {
     private lateinit var tvSelesai: TextView
     private lateinit var tvMenungguBayar: TextView
 
-    private lateinit var tvPsTersedia: TextView
-    private lateinit var tvPsDipakai: TextView
+    private lateinit var tvHeroTransaksiAktif: TextView
+    private lateinit var tvHeroTransaksiAktifInfo: TextView
+    private lateinit var tvHeroPembayaran: TextView
+    private lateinit var tvHeroPembayaranInfo: TextView
+
     private lateinit var tvInfoUtama: TextView
     private lateinit var tvInfoSecondary: TextView
-
-    private lateinit var cardMonitoring: LinearLayout
-    private lateinit var cardRiwayat: LinearLayout
-    private lateinit var cardProfil: LinearLayout
 
     private lateinit var progressBar: ProgressBar
     private lateinit var contentLayout: LinearLayout
 
     private lateinit var layoutTipeContainer: LinearLayout
     private lateinit var sectionTipeWrapper: HorizontalScrollView
+    private lateinit var layoutTransaksiSaya: LinearLayout
 
     private var currentUserName: String = "Pelanggan"
 
@@ -57,7 +57,6 @@ class DashboardFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         bindViews(view)
-        setupQuickMenu()
         loadSessionGreeting()
         fetchDashboardData()
     }
@@ -76,20 +75,20 @@ class DashboardFragment : Fragment() {
         tvSelesai = view.findViewById(R.id.tvSelesai)
         tvMenungguBayar = view.findViewById(R.id.tvMenungguBayar)
 
-        tvPsTersedia = view.findViewById(R.id.tvPsTersedia)
-        tvPsDipakai = view.findViewById(R.id.tvPsDipakai)
+        tvHeroTransaksiAktif = view.findViewById(R.id.tvHeroTransaksiAktif)
+        tvHeroTransaksiAktifInfo = view.findViewById(R.id.tvHeroTransaksiAktifInfo)
+        tvHeroPembayaran = view.findViewById(R.id.tvHeroPembayaran)
+        tvHeroPembayaranInfo = view.findViewById(R.id.tvHeroPembayaranInfo)
+
         tvInfoUtama = view.findViewById(R.id.tvInfoUtama)
         tvInfoSecondary = view.findViewById(R.id.tvInfoSecondary)
-
-        cardMonitoring = view.findViewById(R.id.cardMonitoring)
-        cardRiwayat = view.findViewById(R.id.cardRiwayat)
-        cardProfil = view.findViewById(R.id.cardProfil)
 
         progressBar = view.findViewById(R.id.progressBar)
         contentLayout = view.findViewById(R.id.contentLayout)
 
         layoutTipeContainer = view.findViewById(R.id.layoutTipeContainer)
         sectionTipeWrapper = view.findViewById(R.id.sectionTipeWrapper)
+        layoutTransaksiSaya = view.findViewById(R.id.layoutTransaksiSaya)
     }
 
     private fun loadSessionGreeting() {
@@ -97,24 +96,7 @@ class DashboardFragment : Fragment() {
         currentUserName = prefs.getString("name", "")?.takeIf { it.isNotBlank() } ?: "Pelanggan"
 
         tvGreeting.text = "Halo, $currentUserName 👋"
-        tvSubGreeting.text = "Pantau booking, status PlayStation, dan aktivitas terbaru kamu dengan cepat."
-    }
-
-    private fun setupQuickMenu() {
-        cardMonitoring.setOnClickListener {
-            activity?.findViewById<BottomNavigationView>(R.id.bottomNavigationView)
-                ?.selectedItemId = R.id.monitoring
-        }
-
-        cardRiwayat.setOnClickListener {
-            activity?.findViewById<BottomNavigationView>(R.id.bottomNavigationView)
-                ?.selectedItemId = R.id.riwayat
-        }
-
-        cardProfil.setOnClickListener {
-            activity?.findViewById<BottomNavigationView>(R.id.bottomNavigationView)
-                ?.selectedItemId = R.id.profil
-        }
+        tvSubGreeting.text = "Lihat status transaksi dan pembayaranmu dengan cepat."
     }
 
     private fun fetchDashboardData() {
@@ -133,7 +115,8 @@ class DashboardFragment : Fragment() {
                 }
 
                 val monitoringDeferred = async {
-                    RetrofitClient.apiService.getMonitoring("Bearer $token")                }
+                    RetrofitClient.apiService.getMonitoring("Bearer $token")
+                }
 
                 val transaksiResponse = transaksiDeferred.await()
                 val monitoringResponse = monitoringDeferred.await()
@@ -152,6 +135,7 @@ class DashboardFragment : Fragment() {
 
                 bindStatistikTransaksi(transaksiItems)
                 bindMonitoringInfo(monitoringItems)
+                bindTransaksiSaya(transaksiItems)
 
             } catch (e: Exception) {
                 Toast.makeText(
@@ -165,47 +149,278 @@ class DashboardFragment : Fragment() {
         }
     }
 
+    private fun normalizeStatusBayar(status: String?): String {
+        val value = status?.trim()?.lowercase() ?: ""
+
+        return when (value) {
+            "paid", "success" -> "lunas"
+            "pending", "menuggu" -> "menunggu"
+            "menunggu_validasi" -> "menunggu validasi"
+            "" -> "belum ada"
+            else -> value
+        }
+    }
+
+    private fun isStatusTransaksiMasihRelevan(status: String?): Boolean {
+        val value = status?.trim()?.lowercase() ?: ""
+        return value == "aktif" || value == "waiting" || value == "dijadwalkan"
+    }
+
+    private fun isPembayaranPerluDitindak(status: String?): Boolean {
+        val value = normalizeStatusBayar(status)
+        return value == "menunggu" || value == "menunggu validasi"
+    }
+
+    private fun isMasukBelumLunasCard(item: HistoryItem): Boolean {
+        return isStatusTransaksiMasihRelevan(item.statusTransaksi) &&
+                isPembayaranPerluDitindak(item.pembayaran?.statusBayar)
+    }
+
     private fun bindStatistikTransaksi(items: List<HistoryItem>) {
         val total = items.size
         val aktif = items.count { it.statusTransaksi.equals("aktif", true) }
         val selesai = items.count { it.statusTransaksi.equals("selesai", true) }
-        val menungguBayar = items.count {
-            val statusTransaksi = it.statusTransaksi.lowercase()
-            val statusBayar = it.pembayaran?.statusBayar?.lowercase() ?: "menunggu"
 
-            (statusTransaksi == "aktif" || statusTransaksi == "menunggu_pembayaran") &&
-                    statusBayar != "lunas"
+        val belumLunasCount = items.count {
+            isStatusTransaksiMasihRelevan(it.statusTransaksi) &&
+                    normalizeStatusBayar(it.pembayaran?.statusBayar) == "menunggu"
+        }
+
+        val validasiCount = items.count {
+            isStatusTransaksiMasihRelevan(it.statusTransaksi) &&
+                    normalizeStatusBayar(it.pembayaran?.statusBayar) == "menunggu validasi"
+        }
+
+        val perluDitindakCount = belumLunasCount + validasiCount
+
+        val aktifCount = items.count { it.statusTransaksi.equals("aktif", true) }
+        val bookingCount = items.count {
+            it.statusTransaksi.equals("waiting", true) ||
+                    it.statusTransaksi.equals("dijadwalkan", true)
         }
 
         tvTotalTransaksi.text = total.toString()
         tvAktif.text = aktif.toString()
         tvSelesai.text = selesai.toString()
-        tvMenungguBayar.text = menungguBayar.toString()
+        tvMenungguBayar.text = perluDitindakCount.toString()
 
-        val transaksiAktif = items.firstOrNull { it.statusTransaksi.equals("aktif", true) }
-        val transaksiMenungguValidasi = items.firstOrNull {
-            it.pembayaran?.statusBayar?.equals("menunggu_validasi", true) == true
+        tvHeroTransaksiAktif.text = aktifCount.toString()
+        tvHeroTransaksiAktifInfo.text = when {
+            aktifCount > 0 -> "$aktifCount transaksi sedang berjalan"
+            bookingCount > 0 -> "$bookingCount booking sedang menunggu / dijadwalkan"
+            else -> "Belum ada transaksi aktif"
         }
 
-        val transaksiTerakhir = items.maxByOrNull { it.totalHarga }
+        tvHeroPembayaran.text = when {
+            perluDitindakCount > 0 -> "Perlu Dicek"
+            items.any {
+                isStatusTransaksiMasihRelevan(it.statusTransaksi) &&
+                        normalizeStatusBayar(it.pembayaran?.statusBayar) == "lunas"
+            } -> "Aman"
+            else -> "-"
+        }
+
+        tvHeroPembayaranInfo.text = when {
+            perluDitindakCount > 0 ->
+                "Belum lunas $belumLunasCount • Validasi $validasiCount"
+            items.any {
+                isStatusTransaksiMasihRelevan(it.statusTransaksi) &&
+                        normalizeStatusBayar(it.pembayaran?.statusBayar) == "lunas"
+            } ->
+                "Pembayaran transaksi aktif aman"
+            else ->
+                "Belum ada pembayaran aktif"
+        }
 
         tvInfoUtama.text = when {
-            transaksiMenungguValidasi != null ->
-                "Pembayaran kamu masih menunggu validasi admin."
-            transaksiAktif != null ->
-                "Ada transaksi aktif yang sedang berjalan sekarang."
+            aktifCount > 0 && perluDitindakCount == 0 ->
+                "Kamu punya transaksi aktif dan pembayarannya aman."
+            aktifCount > 0 && perluDitindakCount > 0 ->
+                "Ada transaksi aktif, cek pembayaran yang masih perlu diselesaikan."
+            bookingCount > 0 && perluDitindakCount > 0 ->
+                "Ada booking yang masih menunggu pembayaran atau validasi."
+            bookingCount > 0 ->
+                "Kamu punya booking yang sedang menunggu proses."
             total == 0 ->
-                "Belum ada transaksi. Coba cek PlayStation yang tersedia."
+                "Belum ada transaksi. Coba cek PS yang tersedia."
             else ->
-                "Semua aktivitas terlihat aman dan terkendali."
+                "Semua aktivitas kamu terlihat aman."
         }
 
+        val transaksiTerbaru = items.maxByOrNull { it.idTransaksi }
+
         tvInfoSecondary.text = when {
-            transaksiTerakhir != null ->
-                "Total transaksi tertinggi: ${formatCurrency(transaksiTerakhir.totalHarga)}"
+            transaksiTerbaru != null ->
+                "Transaksi terbaru #${transaksiTerbaru.idTransaksi} • total ${formatCurrency(transaksiTerbaru.totalHarga)}"
             else ->
-                "Belum ada ringkasan transaksi untuk ditampilkan."
+                "Belum ada transaksi untuk ditampilkan."
         }
+    }
+
+    private fun bindTransaksiSaya(items: List<HistoryItem>) {
+        layoutTransaksiSaya.removeAllViews()
+
+        val filtered = items
+            .filter { isMasukBelumLunasCard(it) }
+            .sortedWith(
+                compareByDescending<HistoryItem> {
+                    when {
+                        it.statusTransaksi.equals("aktif", true) -> 3
+                        it.statusTransaksi.equals("waiting", true) -> 2
+                        it.statusTransaksi.equals("dijadwalkan", true) -> 2
+                        else -> 0
+                    }
+                }.thenByDescending { it.idTransaksi }
+            )
+            .take(3)
+
+        if (filtered.isEmpty()) {
+            val emptyCard = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                background = ContextCompat.getDrawable(context, R.drawable.bg_dashboard_card)
+                setPadding(dp(16), dp(16), dp(16), dp(16))
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            }
+
+            val title = TextView(requireContext()).apply {
+                text = "Tidak ada transaksi yang perlu ditindak"
+                textSize = 15f
+                setTextColor(ContextCompat.getColor(context, R.color.text_primary))
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }
+
+            val sub = TextView(requireContext()).apply {
+                text = "Transaksi aktif yang belum lunas atau masih menunggu validasi akan muncul di sini."
+                textSize = 13f
+                setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+                setPadding(0, dp(8), 0, 0)
+            }
+
+            emptyCard.addView(title)
+            emptyCard.addView(sub)
+            layoutTransaksiSaya.addView(emptyCard)
+            return
+        }
+
+        filtered.forEachIndexed { index, item ->
+            layoutTransaksiSaya.addView(createTransaksiCard(item))
+
+            if (index < filtered.lastIndex) {
+                val spacer = View(requireContext()).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dp(12)
+                    )
+                }
+                layoutTransaksiSaya.addView(spacer)
+            }
+        }
+    }
+
+    private fun createTransaksiCard(item: HistoryItem): View {
+        val context = requireContext()
+        val paymentStatus = normalizeStatusBayar(item.pembayaran?.statusBayar)
+
+        val card = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            background = ContextCompat.getDrawable(context, R.drawable.bg_dashboard_card)
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                val intent = Intent(requireContext(), DetailTransaksiActivity::class.java)
+                intent.putExtra("id_transaksi", item.idTransaksi)
+                startActivity(intent)
+            }
+        }
+
+        val topRow = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val left = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+
+        val tvId = TextView(context).apply {
+            text = "Transaksi #${item.idTransaksi}"
+            textSize = 15f
+            setTextColor(ContextCompat.getColor(context, R.color.text_primary))
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+        }
+
+        val psName = item.detailSewa.firstOrNull()?.playstation?.nomorPs ?: "Tanpa PS"
+        val tvPs = TextView(context).apply {
+            text = psName
+            textSize = 13f
+            setTextColor(ContextCompat.getColor(context, R.color.primary))
+            setPadding(0, dp(6), 0, 0)
+        }
+
+        val tvTotal = TextView(context).apply {
+            text = formatCurrency(item.totalHarga)
+            textSize = 12f
+            setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+            setPadding(0, dp(6), 0, 0)
+        }
+
+        left.addView(tvId)
+        left.addView(tvPs)
+        left.addView(tvTotal)
+
+        val right = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+
+        val tvStatus = TextView(context).apply {
+            text = item.statusTransaksi.replaceFirstChar { it.uppercase() }
+            textSize = 11f
+            setPadding(dp(10), dp(6), dp(10), dp(6))
+            background = ContextCompat.getDrawable(context, R.drawable.bg_dashboard_chip_card)
+            setTextColor(ContextCompat.getColor(context, R.color.text_primary))
+        }
+
+        val tvBayar = TextView(context).apply {
+            text = when (paymentStatus) {
+                "menunggu validasi" -> "Menunggu Validasi"
+                "menunggu" -> "Belum Lunas"
+                "lunas" -> "Lunas"
+                else -> "-"
+            }
+            textSize = 11f
+            setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+            setPadding(0, dp(8), 0, 0)
+        }
+
+        right.addView(tvStatus)
+        right.addView(tvBayar)
+
+        topRow.addView(left)
+        topRow.addView(right)
+
+        val tvHint = TextView(context).apply {
+            text = "Tap untuk lihat detail transaksi"
+            textSize = 12f
+            setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+            setPadding(0, dp(12), 0, 0)
+        }
+
+        card.addView(topRow)
+        card.addView(tvHint)
+
+        return card
     }
 
     private fun bindMonitoringInfo(items: List<PsMonitoringItem>) {
@@ -225,21 +440,9 @@ class DashboardFragment : Fragment() {
             return statusPs == "tersedia" && !isSedangDipakai(item)
         }
 
-        val tersedia = items.count { isTersedia(it) }
-        val dipakai = items.count { isSedangDipakai(it) }
-
-        tvPsTersedia.text = tersedia.toString()
-        tvPsDipakai.text = dipakai.toString()
-
         bindDynamicTipeCards(items, ::isTersedia)
     }
 
-    /**
-     * Logika tipe yang benar:
-     * - ambil dari relasi database: ps -> tipe -> namaTipe
-     * - jangan jadikan PS3/PS4/PS5/VIP sebagai sumber kebenaran
-     * - UI mengikuti hasil grouping dari API
-     */
     private fun bindDynamicTipeCards(
         items: List<PsMonitoringItem>,
         isTersediaChecker: (PsMonitoringItem) -> Boolean

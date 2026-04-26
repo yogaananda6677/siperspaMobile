@@ -71,7 +71,9 @@ class TambahProdukActivity : AppCompatActivity() {
     }
 
     private fun setupList() {
-        produkAdapter = ProdukCustomerAdapter(produkItems) {}
+        produkAdapter = ProdukCustomerAdapter {
+            // callback perubahan qty
+        }
 
         rvProduk.layoutManager = LinearLayoutManager(this)
         rvProduk.adapter = produkAdapter
@@ -104,7 +106,8 @@ class TambahProdukActivity : AppCompatActivity() {
                     val data = response.body()?.data ?: emptyList()
                     produkItems.clear()
                     produkItems.addAll(data.map { CartProdukItem(it, 0) })
-                    produkAdapter.notifyDataSetChanged()
+
+                    produkAdapter.submitFilteredList(produkItems)
 
                     layoutEmpty.visibility = if (data.isEmpty()) View.VISIBLE else View.GONE
                     rvProduk.visibility = if (data.isEmpty()) View.GONE else View.VISIBLE
@@ -128,21 +131,21 @@ class TambahProdukActivity : AppCompatActivity() {
     }
 
     private fun submitTambahProduk() {
-        val selected = produkItems
-            .filter { it.qty > 0 }
-            .map {
-                TambahProdukItem(
-                    idProduk = it.produk.idProduk,
-                    qty = it.qty
-                )
-            }
+        val selected = produkAdapter.getSelectedProduk()
 
         if (selected.isEmpty()) {
             Toast.makeText(this, "Pilih minimal 1 produk", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val request = TambahProdukRequest(produk = selected)
+        val request = TambahProdukRequest(
+            produk = selected.map {
+                TambahProdukItem(
+                    idProduk = it.idProduk,
+                    qty = it.qty
+                )
+            }
+        )
 
         setLoading(true)
 

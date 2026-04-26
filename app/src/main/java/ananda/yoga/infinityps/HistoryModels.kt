@@ -6,6 +6,10 @@ data class HistoryResponse(
     val data: List<HistoryItem>
 )
 
+data class DetailHistoryResponse(
+    val data: HistoryItem?
+)
+
 data class HistoryItem(
     @SerializedName("id_transaksi") val idTransaksi: Int,
     val tanggal: String,
@@ -21,8 +25,8 @@ data class HistoryItem(
 data class HistoryUser(
     @SerializedName("id_user") val idUser: Int,
     val name: String,
-    val username: String,
-    val email: String
+    val username: String?,
+    val email: String?
 )
 
 data class HistoryDetailSewa(
@@ -62,26 +66,23 @@ data class HistoryProduk(
 )
 
 data class HistoryPembayaran(
-    @SerializedName("id_pembayaran") val idPembayaran: Int,
-    @SerializedName("metode_pembayaran") val metodePembayaran: String?,
-    @SerializedName("total_bayar") val totalBayar: Double?,
-    val kembalian: Double?,
-    @SerializedName("waktu_bayar") val waktuBayar: String?,
-    @SerializedName("status_bayar") val statusBayar: String
-)
+    @SerializedName("id_pembayaran") val idPembayaran: Int? = null,
+    @SerializedName("metode_pembayaran") val metodePembayaran: String? = null,
+    @SerializedName("total_bayar") val totalBayar: Double? = null,
+    val kembalian: Double? = null,
+    @SerializedName("waktu_bayar") val waktuBayar: String? = null,
+    @SerializedName("status_bayar") val statusBayar: String? = null,
 
-data class BayarRequest(
-    @SerializedName("metode_pembayaran") val metodePembayaran: String,
-    @SerializedName("total_bayar") val totalBayar: Double? = null
-)
+    val provider: String? = null,
+    @SerializedName("provider_order_id") val providerOrderId: String? = null,
+    @SerializedName("provider_transaction_id") val providerTransactionId: String? = null,
+    @SerializedName("provider_payment_type") val providerPaymentType: String? = null,
+    @SerializedName("provider_transaction_status") val providerTransactionStatus: String? = null,
+    @SerializedName("provider_fraud_status") val providerFraudStatus: String? = null,
 
-data class BayarResponse(
-    val message: String,
-    val data: HistoryItem?
-)
-
-data class DetailHistoryResponse(
-    val data: HistoryItem
+    @SerializedName("qr_url") val qrUrl: String? = null,
+    @SerializedName("qr_string") val qrString: String? = null,
+    @SerializedName("expired_at") val expiredAt: String? = null
 )
 
 data class TambahWaktuRequest(

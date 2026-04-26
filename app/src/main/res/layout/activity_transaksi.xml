@@ -27,9 +27,9 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:background="@drawable/bg_back_button"
+                android:contentDescription="Kembali"
                 android:padding="10dp"
-                android:src="@drawable/ic_arrow_back"
-                android:contentDescription="Kembali" />
+                android:src="@drawable/ic_arrow_back" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -127,6 +127,7 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/tvInfoAturWaktu"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
@@ -138,23 +139,21 @@
                 android:id="@+id/rgBookingMode"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
+                android:layout_marginTop="12dp"
                 android:orientation="horizontal">
 
                 <RadioButton
                     android:id="@+id/rbBookingSekarang"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Sekarang"
-                    android:textColor="@color/text_primary" />
+                    android:text="Sekarang" />
 
                 <RadioButton
                     android:id="@+id/rbBookingNanti"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:text="Nanti"
-                    android:textColor="@color/text_primary" />
+                    android:text="Nanti" />
             </RadioGroup>
 
             <LinearLayout
@@ -193,10 +192,9 @@
                 android:layout_height="48dp"
                 android:layout_marginTop="12dp"
                 android:backgroundTint="@color/primary"
-                android:text="Pilih Jam Booking"
+                android:text="Pilih Slot Waktu"
                 android:textAllCaps="false"
-                android:textColor="@android:color/white"
-                android:visibility="gone" />
+                android:textColor="@android:color/white" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -290,6 +288,24 @@
                 android:text="Opsional. Tambahkan kalau memang diperlukan."
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
+
+            <EditText
+                android:id="@+id/etCariProduk"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_input"
+                android:hint="Cari makanan, minuman, snack..."
+                android:padding="12dp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:textSize="11sp" />
+
+            <Spinner
+                android:id="@+id/spinnerKategoriProduk"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvProduk"

@@ -17,8 +17,16 @@ import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.TimeZone
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.result.contract.ActivityResultContracts
 
 class DetailTransaksiActivity : AppCompatActivity() {
+
+    companion object {
+        private const val MINIMUM_EDIT_MINUTES = 30
+    }
 
     private lateinit var tvId: TextView
     private lateinit var tvStatusTransaksi: TextView
@@ -43,6 +51,9 @@ class DetailTransaksiActivity : AppCompatActivity() {
     private var idTransaksi: Int = 0
     private var currentData: HistoryItem? = null
 
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_detail_transaksi)
@@ -51,6 +62,7 @@ class DetailTransaksiActivity : AppCompatActivity() {
 
         bindViews()
         setupActions()
+        ensureNotificationPermission()
         fetchDetail()
     }
 
@@ -81,6 +93,18 @@ class DetailTransaksiActivity : AppCompatActivity() {
         btnBack = findViewById(R.id.btnBack)
     }
 
+    private fun ensureNotificationPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
     private fun setupActions() {
         btnBack.setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
@@ -93,13 +117,20 @@ class DetailTransaksiActivity : AppCompatActivity() {
                 putExtra("total_harga", data.totalHarga)
             }
             startActivity(intent)
-
-
-
         }
 
         btnTambahWaktu.setOnClickListener {
             val data = currentData ?: return@setOnClickListener
+
+            if (isLockedByRemainingTime(data)) {
+                Toast.makeText(
+                    this,
+                    "Sisa waktu kurang dari 30 menit. Tambah waktu tidak tersedia.",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+
             val detailSewa = data.detailSewa.firstOrNull()
             val psId = detailSewa?.idPs ?: 0
             val nomorPs = detailSewa?.playstation?.nomorPs ?: "-"
@@ -118,6 +149,16 @@ class DetailTransaksiActivity : AppCompatActivity() {
 
         btnTambahProduk.setOnClickListener {
             val data = currentData ?: return@setOnClickListener
+
+            if (isLockedByRemainingTime(data)) {
+                Toast.makeText(
+                    this,
+                    "Sisa waktu kurang dari 30 menit. Tambah produk tidak tersedia.",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+
             val detailSewa = data.detailSewa.firstOrNull()
             val nomorPs = detailSewa?.playstation?.nomorPs ?: "-"
             val namaTipe = detailSewa?.playstation?.tipe?.namaTipe ?: "-"
@@ -150,6 +191,7 @@ class DetailTransaksiActivity : AppCompatActivity() {
                     if (item != null) {
                         currentData = item
                         bindData(item)
+                        TransaksiReminderScheduler.scheduleReminders(this@DetailTransaksiActivity, item)
                     } else {
                         Toast.makeText(
                             this@DetailTransaksiActivity,
@@ -179,6 +221,8 @@ class DetailTransaksiActivity : AppCompatActivity() {
     private fun bindData(item: HistoryItem) {
         val statusTransaksi = item.statusTransaksi.lowercase()
         val statusBayar = item.pembayaran?.statusBayar?.lowercase() ?: "menunggu"
+        val terkunciKarenaWaktu = isLockedByRemainingTime(item)
+        val sisaMenitAktif = getSmallestRemainingMinutes(item)
 
         tvId.text = "Transaksi #${item.idTransaksi}"
         tvTanggal.text = formatDate(item.tanggal)
@@ -190,6 +234,8 @@ class DetailTransaksiActivity : AppCompatActivity() {
         tvInfoRingkas.text = when {
             statusBayar == "menunggu_validasi" ->
                 "Pembayaran sedang menunggu validasi admin."
+            statusTransaksi == "aktif" && terkunciKarenaWaktu ->
+                "Sisa waktu kurang dari 30 menit, tambah waktu dan produk sudah dikunci."
             statusTransaksi == "aktif" && statusBayar != "lunas" ->
                 "Transaksi masih berjalan dan belum lunas."
             statusTransaksi == "selesai" ->
@@ -206,12 +252,15 @@ class DetailTransaksiActivity : AppCompatActivity() {
                 val tipePs = it.playstation?.tipe?.namaTipe ?: "-"
                 val durasi = it.durasiMenit ?: 0
                 val subtotal = it.subtotal ?: 0.0
+                val sisaInfo = getRemainingMinutesFromDate(it.jamSelesai)?.let { menit ->
+                    if (menit > 0) "\nSisa: $menit menit" else "\nSisa: habis"
+                } ?: ""
 
                 "PS $namaPs\n" +
                         "Tipe: $tipePs\n" +
                         "Durasi: $durasi menit\n" +
                         "Mulai: ${formatShortDateTime(it.jamMulai)}\n" +
-                        "Selesai: ${formatShortDateTime(it.jamSelesai)}\n" +
+                        "Selesai: ${formatShortDateTime(it.jamSelesai)}$sisaInfo\n" +
                         "Subtotal: ${formatRupiah(subtotal)}"
             }
         }
@@ -231,9 +280,11 @@ class DetailTransaksiActivity : AppCompatActivity() {
             }
         }
 
-        val bolehUbah = statusTransaksi == "aktif" &&
+        val bolehUbahBase = statusTransaksi == "aktif" &&
                 statusBayar != "lunas" &&
                 statusBayar != "menunggu_validasi"
+
+        val bolehUbah = bolehUbahBase && !terkunciKarenaWaktu
 
         val bolehBayar = when (statusTransaksi) {
             "aktif", "menunggu_pembayaran" -> {
@@ -254,6 +305,57 @@ class DetailTransaksiActivity : AppCompatActivity() {
             } else {
                 View.GONE
             }
+
+        if (statusTransaksi == "aktif" && bolehUbahBase && terkunciKarenaWaktu) {
+            tvInfoRingkas.text =
+                "Sisa waktu ${sisaMenitAktif ?: 0} menit. Tambah waktu dan tambah produk dinonaktifkan."
+        }
+    }
+
+    private fun isLockedByRemainingTime(item: HistoryItem): Boolean {
+        val statusTransaksi = item.statusTransaksi.lowercase()
+        if (statusTransaksi != "aktif") return false
+
+        val smallestRemaining = getSmallestRemainingMinutes(item) ?: return false
+        return smallestRemaining < MINIMUM_EDIT_MINUTES
+    }
+
+    private fun getSmallestRemainingMinutes(item: HistoryItem): Long? {
+        val remainingList = item.detailSewa.mapNotNull { getRemainingMinutesFromDate(it.jamSelesai) }
+        if (remainingList.isEmpty()) return null
+        return remainingList.minOrNull()
+    }
+
+    private fun getRemainingMinutesFromDate(raw: String?): Long? {
+        val endMillis = parseDateToMillis(raw) ?: return null
+        val diffMillis = endMillis - System.currentTimeMillis()
+        return diffMillis / 60000
+    }
+
+    private fun parseDateToMillis(raw: String?): Long? {
+        if (raw.isNullOrBlank()) return null
+
+        val formats = listOf(
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault()).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            },
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            },
+            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).apply {
+                timeZone = TimeZone.getDefault()
+            }
+        )
+
+        for (format in formats) {
+            try {
+                val parsed = format.parse(raw)
+                if (parsed != null) return parsed.time
+            } catch (_: Exception) {
+            }
+        }
+
+        return null
     }
 
     private fun setupStatusTransaksi(status: String) {
@@ -330,9 +432,15 @@ class DetailTransaksiActivity : AppCompatActivity() {
     private fun formatDate(value: String): String {
         return try {
             val formats = listOf(
-                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault()),
-                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()),
-                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault()).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                },
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                },
+                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).apply {
+                    timeZone = TimeZone.getDefault()
+                }
             )
             val output = SimpleDateFormat("dd MMM yyyy • HH:mm", Locale("id", "ID"))
 
@@ -353,9 +461,15 @@ class DetailTransaksiActivity : AppCompatActivity() {
         if (value.isNullOrBlank()) return "-"
         return try {
             val formats = listOf(
-                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault()),
-                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()),
-                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault()).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                },
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                },
+                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).apply {
+                    timeZone = TimeZone.getDefault()
+                }
             )
             val output = SimpleDateFormat("dd MMM yyyy • HH:mm", Locale("id", "ID"))
 

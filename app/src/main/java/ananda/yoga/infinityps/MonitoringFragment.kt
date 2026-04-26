@@ -19,9 +19,12 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 class MonitoringFragment : Fragment() {
 
@@ -38,7 +41,7 @@ class MonitoringFragment : Fragment() {
     private lateinit var chipStatusContainer: LinearLayout
     private lateinit var scrollTipe: HorizontalScrollView
 
-    private lateinit var adapter: MonitoringAdapter
+    private lateinit var adapter: MonitoringZoneAdapter
     private var currentUserId: Int = 0
 
     private var allItems: List<PsMonitoringItem> = emptyList()
@@ -60,7 +63,7 @@ class MonitoringFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        return inflater.inflate(R.layout.fragment_monitoring, container, false)
+        return inflater.inflate(R.layout.fragment_monitoring_zone, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -103,13 +106,24 @@ class MonitoringFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        adapter = MonitoringAdapter(
+        adapter = MonitoringZoneAdapter(
             currentUserId = currentUserId,
             onAvailableClick = { item -> openTransaksiPage(item) },
-            onOwnedActiveClick = { item -> openDetailTransaksiPage(item) }
+            onOwnedTransactionClick = { item -> openDetailTransaksiPage(item) }
         )
 
-        rvMonitoring.layoutManager = LinearLayoutManager(requireContext())
+        val spanCount = 5
+        val layoutManager = GridLayoutManager(requireContext(), spanCount)
+        layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int): Int {
+                return when (adapter.getItemViewType(position)) {
+                    MonitoringZoneAdapter.VIEW_TYPE_HEADER -> spanCount
+                    else -> 1
+                }
+            }
+        }
+
+        rvMonitoring.layoutManager = layoutManager
         rvMonitoring.adapter = adapter
     }
 
@@ -135,6 +149,7 @@ class MonitoringFragment : Fragment() {
         val statuses = listOf(
             "SEMUA" to "Semua",
             "TERSEDIA" to "Tersedia",
+            "RESERVASI" to "Reservasi",
             "DIPAKAI" to "Dipakai",
             "PUNYAKU" to "Punyaku",
             "BOOKING" to "Booking",
@@ -162,7 +177,7 @@ class MonitoringFragment : Fragment() {
         val tipeList = items.mapNotNull { it.tipe?.namaTipe?.trim() }
             .filter { it.isNotBlank() }
             .distinct()
-            .sortedBy { it.uppercase() }
+            .sortedBy { it.uppercase(Locale.getDefault()) }
 
         chipTipeContainer.addView(
             createChip(
@@ -210,9 +225,7 @@ class MonitoringFragment : Fragment() {
                     if (isSelected) R.color.status_owned_active_text else R.color.text_secondary
                 )
             )
-            if (isSelected) {
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-            }
+            if (isSelected) setTypeface(typeface, android.graphics.Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -231,7 +244,7 @@ class MonitoringFragment : Fragment() {
                 val prefs = requireContext().getSharedPreferences("app_session", Context.MODE_PRIVATE)
                 val token = prefs.getString("token", "") ?: ""
 
-                val response = RetrofitClient.apiService.getMonitoring("Bearer \$token")
+                val response = RetrofitClient.apiService.getMonitoring("Bearer $token")
 
                 if (response.isSuccessful) {
                     val items = response.body()?.data ?: emptyList()
@@ -249,7 +262,7 @@ class MonitoringFragment : Fragment() {
             } catch (e: Exception) {
                 Toast.makeText(
                     requireContext(),
-                    "Gagal terhubung ke server",
+                    "Gagal terhubung ke server: ${e.message}",
                     Toast.LENGTH_SHORT
                 ).show()
             } finally {
@@ -263,14 +276,37 @@ class MonitoringFragment : Fragment() {
             matchesSearch(item) && matchesTipe(item) && matchesStatus(item)
         }
 
-        adapter.submitList(filtered)
+        adapter.submitList(buildZoneItems(filtered))
 
         tvTotalPs.text = allItems.size.toString()
         tvTotalAktif.text = allItems.count { isPsSedangDipakai(it) }.toString()
-        tvTotalTersedia.text = allItems.count { isPsBisaDibooking(it) }.toString()
+        tvTotalTersedia.text = allItems.count { canCustomerBook(item = it) }.toString()
 
         layoutEmpty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
         rvMonitoring.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
+    }
+
+    private fun buildZoneItems(items: List<PsMonitoringItem>): List<MonitoringZoneListItem> {
+        val grouped = items
+            .sortedWith(compareBy({ extractZoneKey(it.nomorPs) }, { it.nomorPs }))
+            .groupBy { extractZoneKey(it.nomorPs) }
+
+        val result = mutableListOf<MonitoringZoneListItem>()
+
+        grouped.toSortedMap().forEach { (zone, zoneItems) ->
+            result.add(MonitoringZoneListItem.Header(zone))
+            zoneItems.sortedBy { it.nomorPs }.forEach { ps ->
+                result.add(MonitoringZoneListItem.PsItem(ps))
+            }
+        }
+
+        return result
+    }
+
+    private fun extractZoneKey(nomorPs: String): String {
+        val clean = nomorPs.trim()
+        val prefix = clean.takeWhile { it.isLetter() }.uppercase(Locale.getDefault())
+        return if (prefix.isBlank()) "Zona Lainnya" else "Zona $prefix"
     }
 
     private fun matchesSearch(item: PsMonitoringItem): Boolean {
@@ -280,16 +316,12 @@ class MonitoringFragment : Fragment() {
         val nomor = item.nomorPs.lowercase()
         val tipe = item.tipe?.namaTipe?.lowercase().orEmpty()
         val statusPs = item.statusPs.lowercase()
-        val user = item.activeTransaksi?.user?.name?.lowercase().orEmpty()
-        val username = item.activeTransaksi?.user?.username?.lowercase().orEmpty()
         val statusTransaksi = item.activeTransaksi?.statusTransaksi?.lowercase().orEmpty()
         val statusBayar = item.activeTransaksi?.pembayaran?.statusBayar?.lowercase().orEmpty()
 
         return nomor.contains(keyword) ||
                 tipe.contains(keyword) ||
                 statusPs.contains(keyword) ||
-                user.contains(keyword) ||
-                username.contains(keyword) ||
                 statusTransaksi.contains(keyword) ||
                 statusBayar.contains(keyword)
     }
@@ -305,13 +337,11 @@ class MonitoringFragment : Fragment() {
         val statusBayar = transaksi?.pembayaran?.statusBayar
 
         return when (selectedStatus) {
-            "TERSEDIA" -> isPsBisaDibooking(item)
+            "TERSEDIA" -> item.statusPs.equals("tersedia", true)
+            "RESERVASI" -> isReservableSoon(item)
             "DIPAKAI" -> isPsSedangDipakai(item)
-            "PUNYAKU" -> isOwnedActive(item)
-            "BOOKING" -> {
-                status.equals("waiting", true) ||
-                        status.equals("dijadwalkan", true)
-            }
+            "PUNYAKU" -> isOwnedTransaction(item)
+            "BOOKING" -> status.equals("waiting", true) || status.equals("dijadwalkan", true)
             "VALIDASI_CASH" -> statusBayar.equals("menunggu_validasi", true)
             "MAINTENANCE" -> item.statusPs.equals("maintenance", true)
             else -> true
@@ -320,28 +350,83 @@ class MonitoringFragment : Fragment() {
 
     private fun isPsSedangDipakai(item: PsMonitoringItem): Boolean {
         val transaksiStatus = item.activeTransaksi?.statusTransaksi
-        return item.statusPs.equals("digunakan", true) ||
-                transaksiStatus.equals("aktif", true)
+        return item.statusPs.equals("digunakan", true) || transaksiStatus.equals("aktif", true)
     }
 
-    private fun isPsBisaDibooking(item: PsMonitoringItem): Boolean {
-        val transaksiStatus = item.activeTransaksi?.statusTransaksi
-        return item.statusPs.equals("tersedia", true) &&
-                !transaksiStatus.equals("dijadwalkan", true) &&
-                !transaksiStatus.equals("waiting", true) &&
-                !transaksiStatus.equals("aktif", true)
-    }
-
-    private fun isOwnedActive(item: PsMonitoringItem): Boolean {
+    private fun isOwnedTransaction(item: PsMonitoringItem): Boolean {
         val transaksi = item.activeTransaksi ?: return false
         val status = transaksi.statusTransaksi ?: return false
 
-        return status.equals("aktif", true) &&
-                transaksi.user?.idUser == currentUserId
+        return (
+                status.equals("waiting", true) ||
+                        status.equals("dijadwalkan", true) ||
+                        status.equals("aktif", true)
+                ) && transaksi.user?.idUser == currentUserId
+    }
+
+    private fun canCustomerBook(item: PsMonitoringItem): Boolean {
+        val transaksiStatus = item.activeTransaksi?.statusTransaksi
+
+        if (item.statusPs.equals("maintenance", true)) return false
+        if (transaksiStatus.equals("waiting", true) || transaksiStatus.equals("dijadwalkan", true)) return false
+
+        return item.statusPs.equals("tersedia", true) || isReservableSoon(item)
+    }
+
+    private fun isReservableSoon(item: PsMonitoringItem): Boolean {
+        val transaksi = item.activeTransaksi ?: return false
+        if (!transaksi.statusTransaksi.equals("aktif", true)) return false
+
+        val sewa = transaksi.detailSewa.firstOrNull { it.idPs == item.idPs } ?: return false
+        val remaining = getRemainingSeconds(sewa)
+
+        return remaining in 1..1800
+    }
+
+    private fun getRemainingSeconds(sewa: DetailSewa): Long {
+        if (sewa.sisaDetik > 0) return sewa.sisaDetik
+        return parseServerDateToMillis(sewa.jamSelesai)?.let { end ->
+            maxOf(0L, (end - System.currentTimeMillis()) / 1000)
+        } ?: 0L
+    }
+
+    private fun parseServerDateToMillis(raw: String?): Long? {
+        if (raw.isNullOrBlank()) return null
+
+        val candidates = listOf(
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'"
+        )
+
+        candidates.forEach { pattern ->
+            try {
+                val sdf = SimpleDateFormat(pattern, Locale.getDefault())
+                sdf.timeZone = if (pattern.contains("'Z'")) TimeZone.getTimeZone("UTC") else TimeZone.getDefault()
+                val date = sdf.parse(raw)
+                if (date != null) return date.time
+            } catch (_: Exception) {
+            }
+        }
+
+        return null
+    }
+
+    private fun getRemainingSecondsForItem(item: PsMonitoringItem): Long {
+        val sewa = item.activeTransaksi?.detailSewa?.firstOrNull { it.idPs == item.idPs } ?: return 0L
+        return if (sewa.sisaDetik > 0) sewa.sisaDetik else 0L
     }
 
     private fun openTransaksiPage(item: PsMonitoringItem) {
-        if (!isPsBisaDibooking(item)) return
+        val transaksi = item.activeTransaksi
+        val sewa = transaksi?.detailSewa?.firstOrNull { it.idPs == item.idPs }
+
+        val isReservasi =
+            transaksi?.statusTransaksi.equals("aktif", true) &&
+                    item.statusPs.equals("digunakan", true) &&
+                    sewa != null &&
+                    getRemainingSecondsForItem(item) in 1..(50 * 60)
 
         val intent = Intent(requireContext(), TransaksiActivity::class.java).apply {
             putExtra("id_ps", item.idPs)
@@ -349,12 +434,15 @@ class MonitoringFragment : Fragment() {
             putExtra("id_tipe", item.tipe?.idTipe ?: 0)
             putExtra("nama_tipe", item.tipe?.namaTipe ?: "")
             putExtra("harga_sewa", item.tipe?.hargaSewa ?: 0L)
+
+            putExtra("is_reservasi", isReservasi)
+            putExtra("active_jam_selesai", sewa?.jamSelesai ?: "")
         }
         startActivity(intent)
     }
 
     private fun openDetailTransaksiPage(item: PsMonitoringItem) {
-        if (!isOwnedActive(item)) return
+        if (!isOwnedTransaction(item)) return
 
         val transaksi = item.activeTransaksi ?: return
         val intent = Intent(requireContext(), DetailTransaksiActivity::class.java).apply {

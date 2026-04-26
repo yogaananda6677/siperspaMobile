@@ -52,6 +52,7 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Header("Accept") accept: String = "application/json"
     ): Response<MonitoringResponse>
+
     @GET("produk")
     suspend fun getProduk(
         @Header("Authorization") token: String,
@@ -71,21 +72,6 @@ interface ApiService {
         @Header("Accept") accept: String = "application/json"
     ): Response<HistoryResponse>
 
-    @GET("transaksi/{id}")
-    suspend fun getDetailTransaksi(
-        @Header("Authorization") token: String,
-        @Header("Accept") accept: String = "application/json",
-        @Path("id") id: Int
-    ): Response<DetailHistoryResponse>
-
-    @PATCH("transaksi/{id}/bayar")
-    suspend fun bayarTransaksi(
-        @Header("Authorization") token: String,
-        @Header("Accept") accept: String = "application/json",
-        @Path("id") id: Int,
-        @Body request: BayarRequest
-    ): Response<BayarResponse>
-
     @PATCH("transaksi/{id}/tambah-waktu")
     suspend fun tambahWaktu(
         @Header("Authorization") token: String,
@@ -101,4 +87,33 @@ interface ApiService {
         @Path("id") id: Int,
         @Body request: TambahProdukRequest
     ): Response<DetailHistoryResponse>
+
+    @POST("transaksi/{id}/bayar")
+    suspend fun bayarTransaksi(
+        @Header("Authorization") token: String,
+        @Header("Accept") accept: String = "application/json",
+        @Path("id") idTransaksi: Int,
+        @Body request: BayarRequest
+    ): Response<BayarResponse>
+
+    @POST("transaksi/{id}/payment/qris")
+    suspend fun createQrisPayment(
+        @Header("Authorization") token: String,
+        @Header("Accept") accept: String = "application/json",
+        @Path("id") idTransaksi: Int
+    ): Response<QrisPaymentResponse>
+
+    @GET("transaksi/{id}")
+    suspend fun getDetailTransaksi(
+        @Header("Authorization") token: String,
+        @Header("Accept") accept: String = "application/json",
+        @Path("id") idTransaksi: Int
+    ): Response<DetailHistoryResponse>
+
+    @GET("transaksi/{id}/payment/qris/status")
+    suspend fun checkQrisPaymentStatus(
+        @Header("Authorization") token: String,
+        @Header("Accept") accept: String = "application/json",
+        @Path("id") idTransaksi: Int
+    ): Response<QrisPaymentResponse>
 }

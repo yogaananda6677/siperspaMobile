@@ -8,17 +8,19 @@ import androidx.recyclerview.widget.RecyclerView
 import java.util.Locale
 
 class ProdukCustomerAdapter(
-    private val items: MutableList<CartProdukItem>,
     private val onQtyChanged: () -> Unit
 ) : RecyclerView.Adapter<ProdukCustomerAdapter.ViewHolder>() {
 
+    private val filteredItems = mutableListOf<CartProdukItem>()
+    private val selectedState = linkedMapOf<Int, CartProdukItem>()
+
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvNamaProduk: TextView = itemView.findViewById(R.id.tvNamaProduk)
+        val tvKategoriProduk: TextView = itemView.findViewById(R.id.tvKategoriProduk)
         val tvHargaProduk: TextView = itemView.findViewById(R.id.tvHargaProduk)
-        val tvStockProduk: TextView = itemView.findViewById(R.id.tvStockProduk)
-        val tvQtyProduk: TextView = itemView.findViewById(R.id.tvQtyProduk)
-        val btnMinus: TextView = itemView.findViewById(R.id.btnMinus)
-        val btnPlus: TextView = itemView.findViewById(R.id.btnPlus)
+        val tvQty: TextView = itemView.findViewById(R.id.tvQtyProduk)
+        val btnMinus: TextView = itemView.findViewById(R.id.btnMinusProduk)
+        val btnPlus: TextView = itemView.findViewById(R.id.btnPlusProduk)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -27,34 +29,64 @@ class ProdukCustomerAdapter(
         return ViewHolder(view)
     }
 
-    override fun getItemCount(): Int = items.size
+    override fun getItemCount(): Int = filteredItems.size
+
+
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = items[position]
+        val item = filteredItems[position]
+        val produk = item.produk
 
-        holder.tvNamaProduk.text = item.produk.nama
-        holder.tvHargaProduk.text = formatRupiah(item.produk.harga)
-        holder.tvStockProduk.text = "Stok ${item.produk.stock}"
-        holder.tvQtyProduk.text = item.qty.toString()
-
-        holder.btnMinus.alpha = if (item.qty > 0) 1f else 0.45f
-        holder.btnPlus.alpha = if (item.qty < item.produk.stock) 1f else 0.45f
+        holder.tvNamaProduk.text = produk.nama
+        holder.tvKategoriProduk.text = produk.jenis?.replaceFirstChar {
+            if (it.isLowerCase()) it.titlecase(Locale("id", "ID")) else it.toString()
+        } ?: "-"
+        holder.tvHargaProduk.text = formatRupiah(produk.harga)
+        holder.tvQty.text = item.qty.toString()
 
         holder.btnMinus.setOnClickListener {
             if (item.qty > 0) {
-                item.qty--
+                item.qty -= 1
+                if (item.qty == 0) {
+                    selectedState.remove(produk.idProduk)
+                } else {
+                    selectedState[produk.idProduk] = item.copy()
+                }
                 notifyItemChanged(position)
                 onQtyChanged()
             }
         }
 
         holder.btnPlus.setOnClickListener {
-            if (item.qty < item.produk.stock) {
-                item.qty++
-                notifyItemChanged(position)
-                onQtyChanged()
-            }
+            item.qty += 1
+            selectedState[produk.idProduk] = item.copy()
+            notifyItemChanged(position)
+            onQtyChanged()
         }
+    }
+
+
+    fun submitFilteredList(newItems: List<CartProdukItem>) {
+        filteredItems.clear()
+        filteredItems.addAll(newItems.map { incoming ->
+            selectedState[incoming.produk.idProduk]?.copy() ?: incoming
+        })
+        notifyDataSetChanged()
+    }
+
+    fun getSelectedProduk(): List<ProdukRequest> {
+        return selectedState.values
+            .filter { it.qty > 0 }
+            .map {
+                ProdukRequest(
+                    idProduk = it.produk.idProduk,
+                    qty = it.qty
+                )
+            }
+    }
+
+    fun getSelectedCartItems(): List<CartProdukItem> {
+        return selectedState.values.filter { it.qty > 0 }
     }
 
     private fun formatRupiah(value: Long): String {

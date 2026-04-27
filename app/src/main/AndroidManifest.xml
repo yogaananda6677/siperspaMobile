@@ -16,7 +16,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.InfinityPS"
         android:usesCleartextTraffic="true">
-
+        <activity
+            android:name=".DetailPengaduanActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TambahPengaduanActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PengaduanActivity"
+            android:exported="false" />
         <activity
             android:name=".EditProfilActivity"
             android:exported="false" />
@@ -56,9 +64,9 @@
         <activity
             android:name=".SplashActivity"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

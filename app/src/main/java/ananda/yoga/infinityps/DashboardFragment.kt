@@ -2,6 +2,7 @@ package ananda.yoga.infinityps
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -44,6 +45,14 @@ class DashboardFragment : Fragment() {
     private lateinit var sectionTipeWrapper: HorizontalScrollView
     private lateinit var layoutTransaksiSaya: LinearLayout
 
+    // ===== ADUAN =====
+    private lateinit var layoutAduanShortcut: LinearLayout
+    private lateinit var tvAduanStatus: TextView
+    private lateinit var tvAduanJudul: TextView
+    private lateinit var tvAduanInfo: TextView
+    private lateinit var tvAduanCounter: TextView
+    private lateinit var btnLihatAduan: TextView
+
     private var currentUserName: String = "Pelanggan"
 
     override fun onCreateView(
@@ -57,6 +66,7 @@ class DashboardFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         bindViews(view)
+        setupActions()
         loadSessionGreeting()
         fetchDashboardData()
     }
@@ -89,6 +99,23 @@ class DashboardFragment : Fragment() {
         layoutTipeContainer = view.findViewById(R.id.layoutTipeContainer)
         sectionTipeWrapper = view.findViewById(R.id.sectionTipeWrapper)
         layoutTransaksiSaya = view.findViewById(R.id.layoutTransaksiSaya)
+
+        layoutAduanShortcut = view.findViewById(R.id.layoutAduanShortcut)
+        tvAduanStatus = view.findViewById(R.id.tvAduanStatus)
+        tvAduanJudul = view.findViewById(R.id.tvAduanJudul)
+        tvAduanInfo = view.findViewById(R.id.tvAduanInfo)
+        tvAduanCounter = view.findViewById(R.id.tvAduanCounter)
+        btnLihatAduan = view.findViewById(R.id.btnLihatAduan)
+    }
+
+    private fun setupActions() {
+        layoutAduanShortcut.setOnClickListener {
+            startActivity(Intent(requireContext(), PengaduanActivity::class.java))
+        }
+
+        btnLihatAduan.setOnClickListener {
+            startActivity(Intent(requireContext(), PengaduanActivity::class.java))
+        }
     }
 
     private fun loadSessionGreeting() {
@@ -96,7 +123,7 @@ class DashboardFragment : Fragment() {
         currentUserName = prefs.getString("name", "")?.takeIf { it.isNotBlank() } ?: "Pelanggan"
 
         tvGreeting.text = "Halo, $currentUserName 👋"
-        tvSubGreeting.text = "Lihat status transaksi dan pembayaranmu dengan cepat."
+        tvSubGreeting.text = "Lihat status transaksi, pembayaran, dan aduanmu dengan cepat."
     }
 
     private fun fetchDashboardData() {
@@ -118,8 +145,16 @@ class DashboardFragment : Fragment() {
                     RetrofitClient.apiService.getMonitoring("Bearer $token")
                 }
 
+                val pengaduanDeferred = async {
+                    RetrofitClient.apiService.getPengaduanSaya(
+                        "Bearer $token",
+                        "application/json"
+                    )
+                }
+
                 val transaksiResponse = transaksiDeferred.await()
                 val monitoringResponse = monitoringDeferred.await()
+                val pengaduanResponse = pengaduanDeferred.await()
 
                 val transaksiItems = if (transaksiResponse.isSuccessful) {
                     transaksiResponse.body()?.data ?: emptyList()
@@ -133,9 +168,16 @@ class DashboardFragment : Fragment() {
                     emptyList()
                 }
 
+                val pengaduanItems = if (pengaduanResponse.isSuccessful) {
+                    pengaduanResponse.body()?.data ?: emptyList()
+                } else {
+                    emptyList()
+                }
+
                 bindStatistikTransaksi(transaksiItems)
                 bindMonitoringInfo(monitoringItems)
                 bindTransaksiSaya(transaksiItems)
+                bindPengaduanInfo(pengaduanItems)
 
             } catch (e: Exception) {
                 Toast.makeText(
@@ -146,6 +188,50 @@ class DashboardFragment : Fragment() {
             } finally {
                 setLoading(false)
             }
+        }
+    }
+
+    private fun bindPengaduanInfo(items: List<PengaduanItem>) {
+        val totalAduan = items.size
+        val aktifCount = items.count {
+            it.statusPengaduan == "pending" || it.statusPengaduan == "proses"
+        }
+
+        val latest = items.maxByOrNull { it.id }
+
+        tvAduanCounter.text = aktifCount.toString()
+
+        if (latest == null) {
+            tvAduanStatus.text = "Belum Ada"
+            tvAduanJudul.text = "Belum ada aduan"
+            tvAduanInfo.text = "Kalau ada kendala PS, pelayanan, pembayaran, atau fasilitas, kamu bisa langsung buat aduan dari sini."
+            return
+        }
+
+        tvAduanStatus.text = statusPengaduanLabel(latest.statusPengaduan)
+        tvAduanJudul.text = "Kamu mengadukan: ${latest.judulPengaduan ?: "-"}"
+
+        tvAduanInfo.text = when (latest.statusPengaduan) {
+            "pending" ->
+                "Aduan kamu sudah masuk dan sedang menunggu admin mengecek. Total aduan kamu: $totalAduan."
+            "proses" ->
+                "Aduan kamu sedang diproses admin. Cek detail untuk melihat catatan terbaru."
+            "selesai" ->
+                "Aduan terakhir kamu sudah selesai. Kamu tetap bisa melihat riwayat atau membuat aduan baru."
+            "dibatalkan" ->
+                "Aduan terakhir kamu dibatalkan. Buat aduan baru kalau kendala masih terjadi."
+            else ->
+                "Pantau perkembangan aduan kamu dari menu ini."
+        }
+    }
+
+    private fun statusPengaduanLabel(status: String?): String {
+        return when (status?.lowercase()) {
+            "pending" -> "Pending"
+            "proses" -> "Diproses"
+            "selesai" -> "Selesai"
+            "dibatalkan" -> "Dibatalkan"
+            else -> "-"
         }
     }
 
@@ -289,7 +375,7 @@ class DashboardFragment : Fragment() {
                 text = "Tidak ada transaksi yang perlu ditindak"
                 textSize = 15f
                 setTextColor(ContextCompat.getColor(context, R.color.text_primary))
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                typeface = Typeface.DEFAULT_BOLD
             }
 
             val sub = TextView(requireContext()).apply {
@@ -358,7 +444,7 @@ class DashboardFragment : Fragment() {
             text = "Transaksi #${item.idTransaksi}"
             textSize = 15f
             setTextColor(ContextCompat.getColor(context, R.color.text_primary))
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            typeface = Typeface.DEFAULT_BOLD
         }
 
         val psName = item.detailSewa.firstOrNull()?.playstation?.nomorPs ?: "Tanpa PS"
@@ -496,14 +582,14 @@ class DashboardFragment : Fragment() {
             text = title
             textSize = 16f
             setTextColor(ContextCompat.getColor(context, R.color.text_primary))
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            typeface = Typeface.DEFAULT_BOLD
         }
 
         val tvAvailable = TextView(context).apply {
             text = "$available tersedia"
             textSize = 14f
             setTextColor(ContextCompat.getColor(context, R.color.status_tersedia_text))
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            typeface = Typeface.DEFAULT_BOLD
             setPadding(0, dp(10), 0, 0)
         }
 

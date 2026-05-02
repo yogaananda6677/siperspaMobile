@@ -94,7 +94,7 @@ interface ApiService {
         @Body request: TambahProdukRequest
     ): Response<DetailHistoryResponse>
 
-    @POST("transaksi/{id}/bayar")
+    @PATCH("transaksi/{id}/bayar")
     suspend fun bayarTransaksi(
         @Header("Authorization") token: String,
         @Header("Accept") accept: String = "application/json",

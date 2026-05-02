@@ -1,9 +1,11 @@
 package ananda.yoga.infinityps
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 
 class PengaduanAdapter(
@@ -12,14 +14,14 @@ class PengaduanAdapter(
     private val onCancelClick: (PengaduanItem) -> Unit
 ) : RecyclerView.Adapter<PengaduanAdapter.ViewHolder>() {
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val tvJudul: TextView = view.findViewById(R.id.tvJudulPengaduan)
-        val tvKategori: TextView = view.findViewById(R.id.tvKategoriPengaduan)
-        val tvTanggal: TextView = view.findViewById(R.id.tvTanggalPengaduan)
-        val tvIsi: TextView = view.findViewById(R.id.tvIsiPengaduan)
-        val tvStatus: TextView = view.findViewById(R.id.tvStatusPengaduan)
-        val btnDetail: TextView = view.findViewById(R.id.btnDetailPengaduan)
-        val btnBatal: TextView = view.findViewById(R.id.btnBatalPengaduan)
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val tvJudulPengaduan: TextView = itemView.findViewById(R.id.tvJudulPengaduan)
+        val tvKategoriPengaduan: TextView = itemView.findViewById(R.id.tvKategoriPengaduan)
+        val tvStatusPengaduan: TextView = itemView.findViewById(R.id.tvStatusPengaduan)
+        val tvIsiPengaduan: TextView = itemView.findViewById(R.id.tvIsiPengaduan)
+        val tvTanggalPengaduan: TextView = itemView.findViewById(R.id.tvTanggalPengaduan)
+        val btnDetailPengaduan: TextView = itemView.findViewById(R.id.btnDetailPengaduan)
+        val btnBatalPengaduan: TextView = itemView.findViewById(R.id.btnBatalPengaduan)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -32,21 +34,24 @@ class PengaduanAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
+        val ctx = holder.itemView.context
 
-        holder.tvJudul.text = item.judulPengaduan ?: "-"
-        holder.tvKategori.text = kategoriLabel(item.kategoriAduan)
-        holder.tvTanggal.text = item.createdAt ?: "-"
-        holder.tvIsi.text = item.isiPengaduan ?: "-"
-        holder.tvStatus.text = statusLabel(item.statusPengaduan)
+        holder.tvJudulPengaduan.text = item.judulPengaduan ?: "-"
+        holder.tvKategoriPengaduan.text = kategoriLabel(item.kategoriAduan)
+        holder.tvStatusPengaduan.text = statusLabel(item.statusPengaduan)
+        holder.tvIsiPengaduan.text = item.isiPengaduan ?: "-"
+        holder.tvTanggalPengaduan.text = item.createdAt ?: "-"
 
-        val canCancel = item.statusPengaduan in listOf("pending", "proses")
-        holder.btnBatal.visibility = if (canCancel) View.VISIBLE else View.GONE
+        applyStatusStyle(ctx, holder.tvStatusPengaduan, item.statusPengaduan)
 
-        holder.btnDetail.setOnClickListener {
+        holder.btnDetailPengaduan.setOnClickListener {
             onDetailClick(item)
         }
 
-        holder.btnBatal.setOnClickListener {
+        val canCancel = item.statusPengaduan.equals("pending", true)
+        holder.btnBatalPengaduan.visibility = if (canCancel) View.VISIBLE else View.GONE
+
+        holder.btnBatalPengaduan.setOnClickListener {
             onCancelClick(item)
         }
     }
@@ -76,6 +81,44 @@ class PengaduanAdapter(
             "selesai" -> "Selesai"
             "dibatalkan" -> "Dibatalkan"
             else -> "-"
+        }
+    }
+
+    private fun applyStatusStyle(
+        context: Context,
+        textView: TextView,
+        status: String?
+    ) {
+        when (status?.lowercase()) {
+            "pending" -> {
+                textView.background =
+                    ContextCompat.getDrawable(context, R.drawable.bg_badge_status_soft)
+                textView.setTextColor(ContextCompat.getColor(context, android.R.color.holo_orange_dark))
+            }
+
+            "proses" -> {
+                textView.background =
+                    ContextCompat.getDrawable(context, R.drawable.bg_status_owned_active)
+                textView.setTextColor(ContextCompat.getColor(context, R.color.status_owned_active_text))
+            }
+
+            "selesai" -> {
+                textView.background =
+                    ContextCompat.getDrawable(context, R.drawable.bg_status_tersedia)
+                textView.setTextColor(ContextCompat.getColor(context, R.color.status_tersedia_text))
+            }
+
+            "dibatalkan" -> {
+                textView.background =
+                    ContextCompat.getDrawable(context, R.drawable.bg_status_danger)
+                textView.setTextColor(ContextCompat.getColor(context, R.color.status_danger_text))
+            }
+
+            else -> {
+                textView.background =
+                    ContextCompat.getDrawable(context, R.drawable.bg_dashboard_chip_card)
+                textView.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+            }
         }
     }
 }

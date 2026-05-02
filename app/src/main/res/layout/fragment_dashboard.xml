@@ -116,7 +116,7 @@
                             android:layout_marginTop="6dp"
                             android:text="-"
                             android:textColor="@android:color/white"
-                            android:textSize="20sp"
+                            android:textSize="14sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -221,14 +221,14 @@
                     <TextView
                         android:id="@+id/tvAduanStatus"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_badge_warning"
-                        android:paddingStart="10dp"
-                        android:paddingTop="5dp"
-                        android:paddingEnd="10dp"
-                        android:paddingBottom="5dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_badge_status_soft"
+                        android:gravity="center"
+                        android:minWidth="86dp"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
                         android:text="Belum Ada"
-                        android:textColor="#FBBF24"
+                        android:textColor="@color/text_secondary"
                         android:textSize="11sp"
                         android:textStyle="bold" />
 
@@ -240,17 +240,19 @@
                     <TextView
                         android:id="@+id/btnLihatAduan"
                         android:layout_width="wrap_content"
-                        android:layout_height="38dp"
-                        android:background="@drawable/bg_button_outline_primary"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_button_soft_primary"
                         android:gravity="center"
-                        android:paddingStart="14dp"
-                        android:paddingEnd="14dp"
+                        android:minWidth="110dp"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
                         android:text="Lihat Aduan"
                         android:textColor="@color/primary"
                         android:textSize="12sp"
                         android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>
+
             <!-- Statistik pelanggan -->
             <TextView
                 android:layout_width="wrap_content"

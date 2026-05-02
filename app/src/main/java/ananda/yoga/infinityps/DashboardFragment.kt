@@ -45,7 +45,6 @@ class DashboardFragment : Fragment() {
     private lateinit var sectionTipeWrapper: HorizontalScrollView
     private lateinit var layoutTransaksiSaya: LinearLayout
 
-    // ===== ADUAN =====
     private lateinit var layoutAduanShortcut: LinearLayout
     private lateinit var tvAduanStatus: TextView
     private lateinit var tvAduanJudul: TextView
@@ -198,17 +197,25 @@ class DashboardFragment : Fragment() {
         }
 
         val latest = items.maxByOrNull { it.id }
-
         tvAduanCounter.text = aktifCount.toString()
 
         if (latest == null) {
             tvAduanStatus.text = "Belum Ada"
+            tvAduanStatus.background =
+                ContextCompat.getDrawable(requireContext(), R.drawable.bg_dashboard_chip_card)
+            tvAduanStatus.setTextColor(
+                ContextCompat.getColor(requireContext(), R.color.text_secondary)
+            )
+
             tvAduanJudul.text = "Belum ada aduan"
-            tvAduanInfo.text = "Kalau ada kendala PS, pelayanan, pembayaran, atau fasilitas, kamu bisa langsung buat aduan dari sini."
+            tvAduanInfo.text =
+                "Kalau ada kendala PS, pelayanan, pembayaran, atau fasilitas, kamu bisa langsung buat aduan dari sini."
             return
         }
 
         tvAduanStatus.text = statusPengaduanLabel(latest.statusPengaduan)
+        applyAduanStatusStyle(latest.statusPengaduan)
+
         tvAduanJudul.text = "Kamu mengadukan: ${latest.judulPengaduan ?: "-"}"
 
         tvAduanInfo.text = when (latest.statusPengaduan) {
@@ -222,6 +229,38 @@ class DashboardFragment : Fragment() {
                 "Aduan terakhir kamu dibatalkan. Buat aduan baru kalau kendala masih terjadi."
             else ->
                 "Pantau perkembangan aduan kamu dari menu ini."
+        }
+    }
+
+    private fun applyAduanStatusStyle(status: String?) {
+        val ctx = requireContext()
+
+        when (status?.lowercase()) {
+            "pending" -> {
+                tvAduanStatus.background =
+                    ContextCompat.getDrawable(ctx, R.drawable.bg_badge_status_soft)
+                tvAduanStatus.setTextColor(ContextCompat.getColor(ctx, android.R.color.holo_orange_dark))
+            }
+            "proses" -> {
+                tvAduanStatus.background =
+                    ContextCompat.getDrawable(ctx, R.drawable.bg_status_owned_active)
+                tvAduanStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_owned_active_text))
+            }
+            "selesai" -> {
+                tvAduanStatus.background =
+                    ContextCompat.getDrawable(ctx, R.drawable.bg_status_tersedia)
+                tvAduanStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_tersedia_text))
+            }
+            "dibatalkan" -> {
+                tvAduanStatus.background =
+                    ContextCompat.getDrawable(ctx, R.drawable.bg_status_danger)
+                tvAduanStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_danger_text))
+            }
+            else -> {
+                tvAduanStatus.background =
+                    ContextCompat.getDrawable(ctx, R.drawable.bg_dashboard_chip_card)
+                tvAduanStatus.setTextColor(ContextCompat.getColor(ctx, R.color.text_secondary))
+            }
         }
     }
 
@@ -312,10 +351,8 @@ class DashboardFragment : Fragment() {
             items.any {
                 isStatusTransaksiMasihRelevan(it.statusTransaksi) &&
                         normalizeStatusBayar(it.pembayaran?.statusBayar) == "lunas"
-            } ->
-                "Pembayaran transaksi aktif aman"
-            else ->
-                "Belum ada pembayaran aktif"
+            } -> "Pembayaran transaksi aktif aman"
+            else -> "Belum ada pembayaran aktif"
         }
 
         tvInfoUtama.text = when {
@@ -516,7 +553,6 @@ class DashboardFragment : Fragment() {
 
             return statusPs == "digunakan" ||
                     statusTransaksi == "aktif" ||
-                    statusTransaksi == "menunggu_pembayaran" ||
                     statusTransaksi == "waiting" ||
                     statusTransaksi == "dijadwalkan"
         }

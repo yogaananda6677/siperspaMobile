@@ -459,7 +459,6 @@ class TransaksiActivity : AppCompatActivity() {
             sdf.format(selectedStartCalendar.time)
         }
     }
-
     private fun submitTransaksi() {
         if (idUser == 0) {
             Toast.makeText(this, "User belum login", Toast.LENGTH_SHORT).show()

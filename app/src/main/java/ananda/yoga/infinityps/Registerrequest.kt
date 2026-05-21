@@ -13,6 +13,6 @@ data class RegisterRequest(
 
 data class RegisterResponse(
     val message: String,
-    val user: UserData,
-    val token: String
+    val user: UserResponse?,
+    val token: String?
 )

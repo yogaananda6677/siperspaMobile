@@ -15,7 +15,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import org.json.JSONObject
+
 class RegisterActivity : AppCompatActivity() {
 
     private lateinit var etName: EditText
@@ -101,20 +101,23 @@ class RegisterActivity : AppCompatActivity() {
                         email                 = email,
                         password              = password,
                         password_confirmation = confirm
-                        // role = "pelanggan" sudah default, tidak perlu ditulis
                     )
                 )
 
                 if (response.isSuccessful && response.body() != null) {
                     Toast.makeText(
                         this@RegisterActivity,
-                        "Pendaftaran berhasil! Silakan masuk.",
+                        "Pendaftaran berhasil! Cek email untuk kode OTP.",
                         Toast.LENGTH_SHORT
                     ).show()
-                    val intent = Intent(this@RegisterActivity, LoginActivity::class.java)
+
+                    // ✅ Pindah ke VerifyOtpActivity, kirim email
+                    val intent = Intent(this@RegisterActivity, VerifyOtpActivity::class.java)
+                    intent.putExtra("email", email)
                     intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
                     startActivity(intent)
                     finish()
+
                 } else {
                     Toast.makeText(
                         this@RegisterActivity,
@@ -122,6 +125,7 @@ class RegisterActivity : AppCompatActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
                 }
+
             } catch (e: Exception) {
                 Toast.makeText(
                     this@RegisterActivity,

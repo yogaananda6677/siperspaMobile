@@ -1,8 +1,7 @@
 package ananda.yoga.infinityps
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
@@ -15,6 +14,11 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -36,13 +40,12 @@ class PembayaranActivity : AppCompatActivity() {
     private lateinit var tvQrisStatus: TextView
     private lateinit var tvQrisProviderStatus: TextView
     private lateinit var tvQrisExpiredAt: TextView
-    private lateinit var tvQrisUrl: TextView
-    private lateinit var btnBukaQris: Button
+    private lateinit var imgQrisCode: ImageView
+    private lateinit var progressQris: ProgressBar
     private lateinit var btnRefreshStatus: Button
 
     private var idTransaksi: Int = 0
     private var totalHarga: Double = 0.0
-    private var currentQrisUrl: String? = null
     private var pollingJob: Job? = null
 
     companion object {
@@ -78,8 +81,8 @@ class PembayaranActivity : AppCompatActivity() {
         tvQrisStatus = findViewById(R.id.tvQrisStatus)
         tvQrisProviderStatus = findViewById(R.id.tvQrisProviderStatus)
         tvQrisExpiredAt = findViewById(R.id.tvQrisExpiredAt)
-        tvQrisUrl = findViewById(R.id.tvQrisUrl)
-        btnBukaQris = findViewById(R.id.btnBukaQris)
+        imgQrisCode = findViewById(R.id.imgQrisCode)
+        progressQris = findViewById(R.id.progressQris)
         btnRefreshStatus = findViewById(R.id.btnRefreshStatus)
     }
 
@@ -102,12 +105,7 @@ class PembayaranActivity : AppCompatActivity() {
         updateInfoText("cash")
 
         spinnerMetode.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val metode = spinnerMetode.selectedItem?.toString()?.lowercase() ?: "cash"
                 updateInfoText(metode)
             }
@@ -124,25 +122,7 @@ class PembayaranActivity : AppCompatActivity() {
 
         btnBayar.setOnClickListener {
             val metode = spinnerMetode.selectedItem?.toString()?.lowercase() ?: "cash"
-            if (metode == "cash") {
-                submitCashPayment()
-            } else {
-                createQrisPayment()
-            }
-        }
-
-        btnBukaQris.setOnClickListener {
-            val qrisUrl = currentQrisUrl
-            if (qrisUrl.isNullOrBlank()) {
-                Toast.makeText(this, "Link QRIS tidak tersedia", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            try {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(qrisUrl)))
-            } catch (e: Exception) {
-                Toast.makeText(this, "Tidak bisa membuka link QRIS", Toast.LENGTH_SHORT).show()
-            }
+            if (metode == "cash") submitCashPayment() else createQrisPayment()
         }
 
         btnRefreshStatus.setOnClickListener {
@@ -161,20 +141,58 @@ class PembayaranActivity : AppCompatActivity() {
         }
     }
 
+    private fun tampilkanQrisImage(qrisUrl: String?) {
+        if (!qrisUrl.isNullOrBlank()) {
+            progressQris.visibility = View.VISIBLE
+            imgQrisCode.visibility = View.GONE
+
+            Glide.with(this)
+                .load(qrisUrl)
+                .listener(object : RequestListener<Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        progressQris.visibility = View.GONE
+                        imgQrisCode.visibility = View.VISIBLE
+                        Toast.makeText(
+                            this@PembayaranActivity,
+                            "Gagal memuat gambar QR Code",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: Drawable,
+                        model: Any,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        progressQris.visibility = View.GONE
+                        imgQrisCode.visibility = View.VISIBLE
+                        return false
+                    }
+                })
+                .into(imgQrisCode)
+        } else {
+            imgQrisCode.visibility = View.GONE
+            progressQris.visibility = View.GONE
+        }
+    }
+
     private fun submitCashPayment() {
         pollingJob?.cancel()
-
-        val request = BayarRequest(
-            metodePembayaran = "cash",
-            totalBayar = null
-        )
-
         setLoading(true)
+
+        val request = BayarRequest(metodePembayaran = "cash", totalBayar = null)
 
         lifecycleScope.launch {
             try {
-                val prefs = getSharedPreferences("app_session", Context.MODE_PRIVATE)
-                val token = prefs.getString("token", "") ?: ""
+                val token = getToken()
 
                 val response = RetrofitClient.apiService.bayarTransaksi(
                     "Bearer $token",
@@ -191,18 +209,10 @@ class PembayaranActivity : AppCompatActivity() {
                     ).show()
                     finish()
                 } else {
-                    Toast.makeText(
-                        this@PembayaranActivity,
-                        "Gagal memproses pembayaran cash: ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showErrorToast(response.errorBody()?.string(), response.code())
                 }
             } catch (e: Exception) {
-                Toast.makeText(
-                    this@PembayaranActivity,
-                    "Gagal terhubung ke server: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                showConnectionError(e)
             } finally {
                 setLoading(false)
             }
@@ -215,8 +225,7 @@ class PembayaranActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val prefs = getSharedPreferences("app_session", Context.MODE_PRIVATE)
-                val token = prefs.getString("token", "") ?: ""
+                val token = getToken()
 
                 val response = RetrofitClient.apiService.createQrisPayment(
                     "Bearer $token",
@@ -232,14 +241,11 @@ class PembayaranActivity : AppCompatActivity() {
                     val qrisUrl = payment?.qrUrl
                         ?: midtrans?.actions?.firstOrNull { it.name == "generate-qr-code" }?.url
 
-                    currentQrisUrl = qrisUrl
-
                     layoutQrisResult.visibility = View.VISIBLE
                     tvQrisStatus.text = "Status bayar: ${payment?.statusBayar ?: "-"}"
-                    tvQrisProviderStatus.text =
-                        "Status provider: ${payment?.providerTransactionStatus ?: midtrans?.transactionStatus ?: "-"}"
+                    tvQrisProviderStatus.text = "Status provider: ${payment?.providerTransactionStatus ?: midtrans?.transactionStatus ?: "-"}"
                     tvQrisExpiredAt.text = "Berlaku sampai: ${payment?.expiredAt ?: "-"}"
-                    tvQrisUrl.text = qrisUrl ?: "URL QRIS tidak tersedia"
+                    tampilkanQrisImage(qrisUrl)
 
                     Toast.makeText(
                         this@PembayaranActivity,
@@ -249,18 +255,10 @@ class PembayaranActivity : AppCompatActivity() {
 
                     startPollingQrisStatus()
                 } else {
-                    Toast.makeText(
-                        this@PembayaranActivity,
-                        "Gagal membuat QRIS: ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showErrorToast(response.errorBody()?.string(), response.code())
                 }
             } catch (e: Exception) {
-                Toast.makeText(
-                    this@PembayaranActivity,
-                    "Gagal terhubung ke server: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                showConnectionError(e)
             } finally {
                 setLoading(false)
             }
@@ -269,7 +267,6 @@ class PembayaranActivity : AppCompatActivity() {
 
     private fun startPollingQrisStatus() {
         pollingJob?.cancel()
-
         pollingJob = lifecycleScope.launch {
             while (isActive) {
                 delay(POLLING_INTERVAL_MS)
@@ -281,8 +278,7 @@ class PembayaranActivity : AppCompatActivity() {
     private fun checkQrisStatus(showToast: Boolean) {
         lifecycleScope.launch {
             try {
-                val prefs = getSharedPreferences("app_session", Context.MODE_PRIVATE)
-                val token = prefs.getString("token", "") ?: ""
+                val token = getToken()
 
                 val response = RetrofitClient.apiService.checkQrisPaymentStatus(
                     "Bearer $token",
@@ -298,63 +294,36 @@ class PembayaranActivity : AppCompatActivity() {
                     val qrisUrl = payment?.qrUrl
                         ?: midtrans?.actions?.firstOrNull { it.name == "generate-qr-code" }?.url
 
-                    currentQrisUrl = qrisUrl
-
                     layoutQrisResult.visibility = View.VISIBLE
                     tvQrisStatus.text = "Status bayar: ${payment?.statusBayar ?: "-"}"
-                    tvQrisProviderStatus.text =
-                        "Status provider: ${payment?.providerTransactionStatus ?: midtrans?.transactionStatus ?: "-"}"
+                    tvQrisProviderStatus.text = "Status provider: ${payment?.providerTransactionStatus ?: midtrans?.transactionStatus ?: "-"}"
                     tvQrisExpiredAt.text = "Berlaku sampai: ${payment?.expiredAt ?: "-"}"
-                    tvQrisUrl.text = qrisUrl ?: "URL QRIS tidak tersedia"
+                    tampilkanQrisImage(qrisUrl)
 
                     val statusBayar = payment?.statusBayar?.lowercase() ?: ""
                     val providerStatus = payment?.providerTransactionStatus?.lowercase() ?: ""
 
-                    if (statusBayar == "lunas" || providerStatus == "settlement" || providerStatus == "capture") {
-                        pollingJob?.cancel()
-                        Toast.makeText(
-                            this@PembayaranActivity,
-                            "Pembayaran berhasil dan sudah lunas.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                        finish()
-                        return@launch
+                    when {
+                        statusBayar == "lunas" || providerStatus in listOf("settlement", "capture") -> {
+                            pollingJob?.cancel()
+                            Toast.makeText(this@PembayaranActivity, "Pembayaran berhasil dan sudah lunas.", Toast.LENGTH_LONG).show()
+                            finish()
+                            return@launch
+                        }
+                        statusBayar == "gagal" || providerStatus in listOf("deny", "cancel", "expire", "failure") -> {
+                            pollingJob?.cancel()
+                            Toast.makeText(this@PembayaranActivity, "Pembayaran gagal atau kadaluarsa.", Toast.LENGTH_LONG).show()
+                            return@launch
+                        }
+                        showToast -> {
+                            Toast.makeText(this@PembayaranActivity, body?.message ?: "Status pembayaran diperbarui.", Toast.LENGTH_SHORT).show()
+                        }
                     }
-
-                    if (statusBayar == "gagal" || providerStatus in listOf("deny", "cancel", "expire", "failure")) {
-                        pollingJob?.cancel()
-                        Toast.makeText(
-                            this@PembayaranActivity,
-                            "Pembayaran gagal atau kadaluarsa.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                        return@launch
-                    }
-
-                    if (showToast) {
-                        Toast.makeText(
-                            this@PembayaranActivity,
-                            body?.message ?: "Status pembayaran diperbarui.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } else {
-                    if (showToast) {
-                        Toast.makeText(
-                            this@PembayaranActivity,
-                            "Gagal cek status pembayaran: ${response.code()}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+                } else if (showToast) {
+                    showErrorToast(response.errorBody()?.string(), response.code())
                 }
             } catch (e: Exception) {
-                if (showToast) {
-                    Toast.makeText(
-                        this@PembayaranActivity,
-                        "Gagal terhubung ke server: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+                if (showToast) showConnectionError(e)
             }
         }
     }
@@ -365,8 +334,25 @@ class PembayaranActivity : AppCompatActivity() {
         btnBayar.alpha = if (isLoading) 0.7f else 1f
         spinnerMetode.isEnabled = !isLoading
         btnBack.isEnabled = !isLoading
-        btnBukaQris.isEnabled = !isLoading
         btnRefreshStatus.isEnabled = !isLoading
+    }
+
+    private fun getToken(): String {
+        return getSharedPreferences("app_session", Context.MODE_PRIVATE)
+            .getString("token", "") ?: ""
+    }
+
+    private fun showErrorToast(errorBody: String?, code: Int) {
+        val msg = try {
+            org.json.JSONObject(errorBody).getString("message")
+        } catch (e: Exception) {
+            "Error $code"
+        }
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showConnectionError(e: Exception) {
+        Toast.makeText(this, "Gagal terhubung ke server: ${e.message}", Toast.LENGTH_SHORT).show()
     }
 
     private fun formatRupiah(value: Double): String {

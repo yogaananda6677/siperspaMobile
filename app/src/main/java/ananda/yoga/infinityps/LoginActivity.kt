@@ -27,6 +27,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var tvRegister: TextView
     private lateinit var tvBack: TextView
+    private lateinit var tvForgotPassword: TextView // ✅ tambah ini
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,23 +43,23 @@ class LoginActivity : AppCompatActivity() {
 
         preferences = getSharedPreferences("app_session", MODE_PRIVATE)
 
-        etUsername = findViewById(R.id.etUsername)
-        etPassword = findViewById(R.id.etPassword)
-        btnLogin = findViewById(R.id.btnLogin)
-        progressBar = findViewById(R.id.progressBar)
-        tvRegister = findViewById(R.id.tvRegisterL)
-        tvBack = findViewById(R.id.tvBack)
+        etUsername      = findViewById(R.id.etUsername)
+        etPassword      = findViewById(R.id.etPassword)
+        btnLogin        = findViewById(R.id.btnLogin)
+        progressBar     = findViewById(R.id.progressBar)
+        tvRegister      = findViewById(R.id.tvRegisterL)
+        tvBack          = findViewById(R.id.tvBack)
+        tvForgotPassword = findViewById(R.id.tvForgotPassword) // ✅ tambah ini
 
-        btnLogin.setOnClickListener {
-            attemptLogin()
-        }
-
-        tvBack.setOnClickListener {
-            finish()
-        }
-
+        btnLogin.setOnClickListener { attemptLogin() }
+        tvBack.setOnClickListener { finish() }
         tvRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
+        }
+
+        // ✅ tambah ini
+        tvForgotPassword.setOnClickListener {
+            startActivity(Intent(this, ForgotPasswordActivity::class.java))
         }
     }
 
@@ -131,6 +132,7 @@ class LoginActivity : AppCompatActivity() {
                     val intent = Intent(this@LoginActivity, MainActivity::class.java)
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     startActivity(intent)
+
                 } else {
                     Toast.makeText(
                         this@LoginActivity,
@@ -138,6 +140,7 @@ class LoginActivity : AppCompatActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
                 }
+
             } catch (e: Exception) {
                 Log.e("LOGIN", "EXCEPTION", e)
                 Toast.makeText(
@@ -152,7 +155,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun setLoading(isLoading: Boolean) {
-        btnLogin.isEnabled = !isLoading
+        btnLogin.isEnabled  = !isLoading
         progressBar.visibility = if (isLoading) android.view.View.VISIBLE else android.view.View.GONE
         btnLogin.text = if (isLoading) "" else "Masuk"
     }

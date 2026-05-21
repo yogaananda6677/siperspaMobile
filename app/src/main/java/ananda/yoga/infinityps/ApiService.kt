@@ -16,12 +16,34 @@ import retrofit2.http.Part
 import retrofit2.http.Query
 
 interface ApiService {
+    @POST("verify-otp")
+    suspend fun verifyOtp(
+        @Body request: VerifyOtpRequest
+    ): Response<VerifyOtpResponse>
+
+    @POST("resend-otp")
+    suspend fun resendOtp(
+        @Body request: ResendOtpRequest
+    ): Response<BaseMessageResponse>
 
     @POST("login")
     suspend fun login(
         @Body request: LoginRequest
     ): Response<LoginResponse>
+    @POST("forgot-password")
+    suspend fun forgotPassword(
+        @Body request: ForgotPasswordRequest):
+            Response<BaseMessageResponse>
 
+    @POST("verify-reset-otp")
+    suspend fun verifyResetOtp(
+        @Body request: VerifyResetOtpRequest):
+            Response<BaseMessageResponse>
+
+    @POST("reset-password")
+    suspend fun resetPassword(
+        @Body request: ResetPasswordRequest):
+            Response<BaseMessageResponse>
     @GET("me")
     suspend fun getMe(
         @Header("Authorization") token: String,

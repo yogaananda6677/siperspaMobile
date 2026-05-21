@@ -7,8 +7,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
-    tools:context=".LoginActivity">
+    tools:context=".VerifyOtpActivity">
 
+    <!-- Dekorasi blob kanan atas (sama seperti login) -->
     <View
         android:id="@+id/decorTop"
         android:layout_width="180dp"
@@ -19,6 +20,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Dekorasi blob kiri bawah (sama seperti login) -->
     <View
         android:id="@+id/decorBottom"
         android:layout_width="220dp"
@@ -29,6 +31,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
+    <!-- Tombol Kembali -->
     <TextView
         android:id="@+id/tvBack"
         android:layout_width="wrap_content"
@@ -42,6 +45,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- ScrollView konten -->
     <ScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -60,6 +64,7 @@
             android:paddingEnd="28dp"
             android:paddingBottom="28dp">
 
+            <!-- Icon gamepad (sama seperti login) -->
             <FrameLayout
                 android:layout_width="88dp"
                 android:layout_height="88dp"
@@ -76,28 +81,44 @@
                     app:tint="@color/primary" />
             </FrameLayout>
 
+            <!-- Judul -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="24dp"
-                android:text="Masuk ke akunmu"
+                android:text="Verifikasi OTP"
                 android:textColor="@color/text_primary"
                 android:textSize="28sp"
                 android:textStyle="bold"
                 android:fontFamily="sans-serif-black" />
 
+            <!-- Subtitle -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="8dp"
                 android:gravity="center"
-                android:text="Masukkan username dan password untuk melanjutkan"
+                android:text="Masukkan kode OTP yang dikirim ke emailmu"
                 android:textColor="@color/text_secondary"
                 android:textSize="15sp"
                 android:fontFamily="sans-serif" />
 
+            <!-- Email target (diisi dari Activity) -->
+            <TextView
+                android:id="@+id/tvEmail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="6dp"
+                android:text=""
+                android:textColor="@color/primary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium" />
+
+            <!-- Card Form (sama persis seperti login) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -109,71 +130,50 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Username"
+                    android:text="Kode OTP"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp"
                     android:fontFamily="sans-serif-medium" />
 
                 <EditText
-                    android:id="@+id/etUsername"
+                    android:id="@+id/etOtp"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_input"
-                    android:hint="Masukkan username"
-                    android:inputType="text"
+                    android:hint="Masukkan kode OTP"
+                    android:inputType="number"
+                    android:maxLength="6"
+                    android:gravity="center"
+                    android:letterSpacing="0.3"
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
                     android:textColor="@color/text_primary"
-                    android:textColorHint="@color/text_hint" />
+                    android:textColorHint="@color/text_hint"
+                    android:textSize="20sp" />
 
+                <!-- Info expired -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
-                    android:text="Password"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:fontFamily="sans-serif-medium" />
-
-                <EditText
-                    android:id="@+id/etPassword"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_input"
-                    android:hint="Masukkan password"
-                    android:inputType="textPassword"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:textColor="@color/text_primary"
-                    android:textColorHint="@color/text_hint" />
-
-                <!-- ✅ Lupa Password — rata kanan, di bawah input password -->
-                <TextView
-                    android:id="@+id/tvForgotPassword"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end"
                     android:layout_marginTop="8dp"
-                    android:text="Lupa Password?"
-                    android:textColor="@color/primary"
-                    android:textSize="13sp"
-                    android:fontFamily="sans-serif-medium"
-                    android:clickable="true"
-                    android:focusable="true" />
+                    android:text="Kode berlaku selama 10 menit"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif" />
 
+                <!-- Tombol Verifikasi + ProgressBar -->
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
-                    android:layout_marginTop="16dp">
+                    android:layout_marginTop="24dp">
 
                     <Button
-                        android:id="@+id/btnLogin"
+                        android:id="@+id/btnVerifikasi"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:background="@drawable/bg_button_primary"
-                        android:text="Masuk"
+                        android:text="Verifikasi"
                         android:textAllCaps="false"
                         android:textColor="@android:color/white"
                         android:textSize="16sp"
@@ -188,18 +188,49 @@
                         android:indeterminate="true"
                         android:indeterminateTint="@android:color/white" />
                 </FrameLayout>
+
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/tvRegisterL"
+            <!-- Resend OTP (sama style seperti "Belum punya akun? Daftar" di login) -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="22dp"
-                android:text="Belum punya akun? Daftar"
-                android:textColor="@color/primary"
-                android:textSize="14sp"
-                android:fontFamily="sans-serif-medium" />
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tidak menerima kode? "
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif-medium" />
+
+                <TextView
+                    android:id="@+id/tvResendOtp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Kirim Ulang"
+                    android:textColor="@color/primary"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <!-- Countdown timer resend -->
+            <TextView
+                android:id="@+id/tvCountdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="6dp"
+                android:text="Kirim ulang dalam 60s"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:fontFamily="sans-serif"
+                android:visibility="gone" />
 
         </LinearLayout>
     </ScrollView>

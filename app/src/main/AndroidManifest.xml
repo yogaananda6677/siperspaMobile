@@ -16,6 +16,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.InfinityPS"
         android:usesCleartextTraffic="true">
+        <activity android:name=".ForgotPasswordActivity" />
+        <activity android:name=".ResetOtpActivity" />
+        <activity android:name=".ResetPasswordActivity" />
+        <activity android:name=".VerifyOtpActivity" />
         <activity
             android:name=".DetailPengaduanActivity"
             android:exported="false" />

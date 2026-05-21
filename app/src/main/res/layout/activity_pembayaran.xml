@@ -162,10 +162,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
+                    android:lineSpacingExtra="3dp"
                     android:text="Info pembayaran"
                     android:textColor="@color/text_secondary"
-                    android:textSize="12sp"
-                    android:lineSpacingExtra="3dp" />
+                    android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>
 
@@ -214,30 +214,32 @@
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
 
-            <TextView
-                android:id="@+id/tvQrisUrl"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="-"
-                android:textColor="@color/primary"
-                android:textSize="12sp" />
+            <!-- Loading saat gambar QR sedang diload -->
+            <ProgressBar
+                android:id="@+id/progressQris"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:visibility="gone" />
 
-            <Button
-                android:id="@+id/btnBukaQris"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="14dp"
-                android:backgroundTint="@color/primary"
-                android:text="Buka QRIS"
-                android:textAllCaps="false"
-                android:textColor="@android:color/white" />
+            <!-- Gambar QR Code -->
+            <ImageView
+                android:id="@+id/imgQrisCode"
+                android:layout_width="220dp"
+                android:layout_height="220dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
+                android:contentDescription="QR Code Pembayaran"
+                android:scaleType="fitCenter"
+                android:visibility="gone" />
 
             <Button
                 android:id="@+id/btnRefreshStatus"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="14dp"
                 android:backgroundTint="@color/primary_dark"
                 android:text="Kembali dan Cek Status"
                 android:textAllCaps="false"

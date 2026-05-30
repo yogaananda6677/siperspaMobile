@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
@@ -11,10 +12,11 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingStart="18dp"
-        android:paddingTop="18dp"
+        android:paddingTop="40dp"
         android:paddingEnd="18dp"
         android:paddingBottom="28dp">
 
+        <!-- Header: Tombol Kembali + Judul -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -43,6 +45,7 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <!-- Hero Banner -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -62,12 +65,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
+                android:lineSpacingExtra="3dp"
                 android:text="Sampaikan keluhan kamu agar admin dapat segera menindaklanjuti."
                 android:textColor="#DCEBFF"
-                android:textSize="13sp"
-                android:lineSpacingExtra="3dp" />
+                android:textSize="13sp" />
         </LinearLayout>
 
+        <!-- Form Aduan -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -90,14 +94,14 @@
                 android:layout_height="52dp"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_input_dark"
+                android:backgroundTint="#EEEEEE"
                 android:hint="Contoh: PS nomor 3 tidak menyala"
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp"
                 android:singleLine="true"
                 android:textColor="@color/text_primary"
-                android:textColorHint="@color/text_secondary"
+                android:textColorHint="#9E9E9E"
                 android:textSize="13sp" />
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -128,19 +132,20 @@
                 android:layout_height="140dp"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_input_dark"
+                android:backgroundTint="#EEEEEE"
                 android:gravity="top"
                 android:hint="Jelaskan keluhan kamu dengan detail..."
                 android:inputType="textMultiLine"
                 android:padding="14dp"
                 android:textColor="@color/text_primary"
-                android:textColorHint="@color/text_secondary"
+                android:textColorHint="#9E9E9E"
                 android:textSize="13sp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Foto Bukti Opsional"
+                android:text="Foto Bukti (Opsional)"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -151,7 +156,7 @@
                 android:layout_height="50dp"
                 android:layout_marginTop="8dp"
                 android:backgroundTint="@color/primary_dark"
-                android:text="Pilih Foto"
+                android:text="Pilih Foto/video"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white" />
 
@@ -163,8 +168,33 @@
                 android:text="Belum ada foto dipilih"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
+            <ImageView
+                android:id="@+id/ivPreviewFoto"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_input_dark"
+                android:clickable="true"
+                android:contentDescription="Preview foto bukti"
+                android:focusable="true"
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
+
+            <!-- ✅ Hint tap fullscreen -->
+            <TextView
+                android:id="@+id/tvTapHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center"
+                android:text="Tap gambar untuk melihat penuh"
+                android:textColor="@color/text_hint"
+                android:textSize="11sp"
+                android:visibility="gone" />
+
         </LinearLayout>
 
+        <!-- Loading Indicator -->
         <ProgressBar
             android:id="@+id/progressBarTambahPengaduan"
             android:layout_width="40dp"
@@ -173,6 +203,7 @@
             android:layout_marginTop="22dp"
             android:visibility="gone" />
 
+        <!-- Tombol Submit -->
         <Button
             android:id="@+id/btnKirimAduan"
             android:layout_width="match_parent"
